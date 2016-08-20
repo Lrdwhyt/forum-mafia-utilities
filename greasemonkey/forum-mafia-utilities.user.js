@@ -143,11 +143,32 @@ GM_addStyle(":root {\
 .voter-name-list {\
   margin: 5px;\
 }\
+.voter-wrap {\
+  display: inline-block;\
+  margin: 2px;\
+  position: relative;\
+}\
 .voter-name {\
   background-color: white;\
   display: inline-block;\
-  margin: 0 2px;\
   padding: 5px 8px;\
+}\
+.vote-link {\
+  background-color: var(--dark-contrast-color);\
+  color: #fff !important;\
+  display: none;\
+  font-size: 7pt;\
+  opacity: 0.8;\
+  padding: 3px;\
+  position: absolute;\
+  right: 0;\
+  text-decoration: none;\
+}\
+.vote-link:hover {\
+  color: #333;\
+}\
+.voter-wrap:hover .vote-link {\
+  display: inline-block;\
 }\
 .voted-name {\
   background-color: var(--dark-contrast-color);\
@@ -158,12 +179,20 @@ GM_addStyle(":root {\
   margin-bottom: 5px;\
   padding: 8px;\
 }\
+.voted-name.no-vote {\
+  background-color: var(--light-color-highlighted);\
+  color: #333;\
+}\
 .vote-count {\
   background-color: #e91e63;\
   color: #fff;\
   display: inline-block;\
   font-weight: bold;\
   padding: 8px;\
+}\
+.vote-count.no-vote {\
+  background-color: var(--med-color);\
+  color: #333;\
 }\
 #data-container {\
   height: 0;\
@@ -179,17 +208,41 @@ GM_addStyle(":root {\
   background-color: #fff;\
   border: none;\
 }\
+.boundary-option {\
+  border-bottom: 3px solid #fff;\
+}\
 .boundary-option-selected {\
   border-bottom: 3px solid var(--dark-contrast-color) !important;\
 }\
 #paste-wrapper {\
   display: none;\
 }\
+.alive-player .player-state {\
+  color: var(--dark-color);\
+}\
+.dead-player .player-state {\
+  color: #999;\
+}\
+.dead-player .edit-player{\
+  text-decoration: line-through;\
+}\
+.player-state {\
+  -moz-appearance: none;\
+  border: none;\
+  padding: 4px;\
+}\
+.player-state option {\
+}\
 .player-name button {\
   background-color: white;\
   border: none;\
   margin: 2px 5px !important;\
   padding: 2px 5px;\
+}\
+.player-number {\
+  background-color: #d09;\
+  color: red;\
+  display: inline-block;\
 }\
 .edit-player {\
   cursor: text;\
@@ -217,9 +270,12 @@ unvotingWord = "unvote";
 votingWord = "vote";
 gmNames = [];
 playerNames = [];
+alivePlayerNames = [];
 savedTallies = {};
 subNames = {};
+nicknames = {};
 recognisedVotes = {};
+playerStates = {};
 curPage = 0;
 threadId = 0;
 postTotal = 0;
@@ -231,7 +287,7 @@ dayOptions = {};
 popoutTally = false;
 
 $(document).ready(function () {
-  threadId = $("a.smallfont").first().attr("href").split("&")[0].split("=")[1];
+  threadId = getThreadId();
   tallyStatus = parseInt(localStorage.getItem("tallyStatus" + threadId));
   if (tallyStatus) {
     createInterface();
@@ -272,6 +328,9 @@ function createInterface() {
   }
   if (localStorage.getItem("savedTallies" + threadId)) {
     savedTallies = JSON.parse(localStorage.getItem("savedTallies" + threadId));
+  }
+  if (localStorage.getItem("playerStates" + threadId)) {
+    playerStates = JSON.parse(localStorage.getItem("playerStates" + threadId));
   }
   $("#qrform").after("<div id='fmu-main-container'></div>");
   $("<div />", {
@@ -318,8 +377,8 @@ function createInterface() {
       text: "Copy BBcode"
     }))
     .append($("<button />", {
-      id: "copy-voting-log",
-      text: "Copy voting log"
+      id: "copy-vote-log",
+      text: "Copy vote log"
     }))
     .append($("<button />", {
       id: "toggle-tally-display",
@@ -453,15 +512,23 @@ function createInterface() {
   }
   if (playerNames.length > 0) {
     for (var i = 0; i < playerNames.length; i++) {
-      newRow = "<li class='player-name' name='" + playerNames[i] + "'><button class='edit-player'>" + playerNames[i] + "</button><span class='sub-list'>";
+      var playerEle = addPlayerGui(playerNames[i]);
+      if (playerStates.hasOwnProperty(playerNames[i])) {
+        console.log(playerEle);
+        $(".player-name[name='" + playerNames[i] + "'] .player-state").text(getPlayerState(playerStates[playerNames[i]]));
+        if (playerStates[playerNames[i]] == -1) {
+          playerEle.addClass("alive-player");
+        } else {
+          playerEle.addClass("dead-player");
+        }
+      } else {
+        playerEle.addClass("alive-player");
+      }
       if (subNames[playerNames[i]]) {
-        newRow += "subbing for";
         for (var j = 0; j < subNames[playerNames[i]].length; j++) {
-          newRow += "<button class='sub-name'>" + subNames[playerNames[i]][j] + "</button>";
+          addSubGui(playerNames[i], subNames[playerNames[i]][j]);
         }
       }
-      newRow += "</span><span class='player-controls'><button class='add-sub'>+Sub</button><button class='remove-player'>-</button></span></li>";
-      $("#player-list").append($(newRow));
     }
   }
   if (tallyStatus == 2) {
@@ -477,7 +544,7 @@ function createInterface() {
     if (dayOptions[currentDay] && dayOptions[currentDay]["endSelected"] == "end-post") {
       end = parseInt(dayOptions[currentDay]["endPost"]);
     }
-    var tally = tallyVotesInRange(start, end);
+    var tally = getTallyForRange(start, end);
     savedTallies[currentDay] = tally;
     localStorage.setItem("savedTallies" + threadId, JSON.stringify(savedTallies));
     $("#tally-body").html(tallyToHtml(tally));
@@ -491,6 +558,22 @@ function createInterface() {
       $("#data-container").remove();
     }
   });
+  $("#copy-vote-log").click(function() {
+    $("#fmu-main-container").append("<textarea id='data-container'></textarea>");
+    var start = 1;
+    var end = 200000;
+    if (dayOptions[currentDay] && dayOptions[currentDay]["startSelected"] == "start-post") {
+      start = parseInt(dayOptions[currentDay]["startPost"]);
+    }
+    if (dayOptions[currentDay] && dayOptions[currentDay]["endSelected"] == "end-post") {
+      end = parseInt(dayOptions[currentDay]["endPost"]);
+    }
+    var voteLog = getVoteLogForRange(start, end);
+    $("#data-container").val(voteLog);
+    $("#data-container").select();
+    document.execCommand("copy");
+    $("#data-container").remove();
+  })
   $("#toggle-tally-display").click(function() {
     if (popoutTally == true) {
       popoutTally = false;
@@ -627,19 +710,44 @@ function createInterface() {
       var i = $.inArray(oldName, playerNames);
       playerNames[i] = newName;
       localStorage.setItem("playerNames" + threadId, JSON.stringify(playerNames));
+      if (subNames.hasOwnProperty(oldName)) {
+        subNames[newName] = subNames[oldName];
+        delete subNames[oldName];
+        localStorage.setItem("subNames" + threadId, JSON.stringify(subNames));
+      }
+      if (playerStates.hasOwnProperty(oldName)) {
+        playerStates[newName] = playerStates[oldName];
+        delete playerStates[oldName];
+        localStorage.setItem("playerStates" + threadId, JSON.stringify(playerStates));
+      }
       $(this).text(newName);
       $(this).parents(".player-name").attr("name", newName);
-      if (subNames[oldName]) {
-        subNames[newName] = subNames[oldName];
-        subNames[oldName] = "";
-      }
     } else if (newName == "") {
       removePlayer(oldName);
     }
   });
+  $("#player-list").on("click", ".player-state", function() {
+    var newState = prompt("Enter the night/day of death. Leave blank to mark player as alive.");
+    if (newState != null) {
+      if (newState == "") {
+        playerStates[$(this).parent().attr("name")] = -1;
+        localStorage.setItem("playerStates" + threadId, JSON.stringify(playerStates));
+        $(this).closest(".player-name").removeClass("dead-player").addClass("alive-player");
+        $(this).text(getPlayerState(-1));
+      } else {
+        newState = parseInt(newState);
+        if (newState > 0) {
+          playerStates[$(this).parent().attr("name")] = newState;
+          localStorage.setItem("playerStates" + threadId, JSON.stringify(playerStates));
+          $(this).closest(".player-name").removeClass("alive-player").addClass("dead-player");
+          $(this).text(getPlayerState(newState));
+        }
+      }
+    }
+  });
   $("#player-list").on("click", ".add-sub", function() {
     player = $(this).parents(".player-name").children(".edit-player").text();
-    newSub = prompt("Enter name of former sub (first player should be the current one, this is for whomever the player is subbing for)");
+    newSub = prompt("Enter alternative name for player - e.g. subs or nicknames");
     if (newSub) {
       addSub(player, newSub);
     }
@@ -666,6 +774,14 @@ function createInterface() {
   });
   if (gmNames.length > 0) {
     generateData();
+  }
+}
+
+function getPlayerState(state) {
+  if (state == -1) {
+    return "alive";
+  } else {
+    return "died day " + state;
   }
 }
 
@@ -720,6 +836,13 @@ function changeDayCount(change) {
         delete dayOptions[dayTotal + 1];
         localStorage.setItem("dayOptions" + threadId, JSON.stringify(dayOptions));
       }
+      if (savedTallies[dayTotal + 1]) {
+        delete savedTallies[dayTotal + 1];
+        localStorage.setItem("savedTallies" + threadId, JSON.stringify(savedTallies));
+      }
+      if (currentDay > dayTotal) {
+        switchDay(dayTotal);
+      }
       $("#day-tab-container .day-select[name='" + (dayTotal + 1) + "']").remove();
     }
   }
@@ -751,65 +874,6 @@ function combinedData() {
   return combinedData;
 }
 
-function tallyToBbcode(tally) {
-  var bbcode = "";
-  Object.keys(tally).sort(function(a, b) {
-    return tally[b].length - tally[a].length;
-  }).forEach(function(target) {
-    bbcode += "[b]" + target + " (" + tally[target].length + ")[/b] - " + tally[target].join(", ") + "\n";
-  });
-  return bbcode;
-}
-
-function tallyToHtml(tally) {
-  var html = "";
-  Object.keys(tally).sort(function(a, b) {
-    //This sorts tally by the length of each voter list - how many people are voting for user a vs how many people are voting for user b
-    return tally[b].length - tally[a].length;
-  }).forEach(function(target) {
-    var voterList = "";
-    for (var voter in tally[target]) {
-      voterList += "<span class='voter-name'>" + tally[target][voter] + "</span>";
-    }
-    html += "<span class='vote-count'>" + tally[target].length + "</span><span class='voted-name'>" + target + "</span><span class='voter-name-list'>" + voterList + "</span><br>";
-  });
-  return html;
-}
-
-function tallyVotesInRange(start, end) {
-  parseAllVotes();
-  var playerVotes = {};
-  var totalVotes = {};
-  Object.keys(recognisedVotes).forEach(function(post) {
-    if (post >= start && post <= end) {
-      var vote = recognisedVotes[post];
-      var type = vote["type"];
-      if (!playerVotes[vote["user"]]) {
-        playerVotes[vote["user"]] = {};
-      }
-      if (!playerVotes[vote["user"]]["post"] || parseInt(post) > playerVotes[vote["user"]]["post"]) {
-        playerVotes[vote["user"]]["post"] = post;
-        if (type == 2 || type == 1) {
-          playerVotes[vote["user"]]["target"] = vote["target"];
-        } else if (type == -1) {
-          playerVotes[vote["user"]]["target"] = null;
-        }
-      }
-    }
-  });
-  Object.keys(playerVotes).forEach(function(user) {
-    var target = playerVotes[user]["target"];
-    if (!target) {
-      return true;
-    }
-    if (!totalVotes[target]) {
-      totalVotes[target] = [];
-    }
-    totalVotes[target].push(user);
-  });
-  return totalVotes;
-}
-
 function parseAllVotes() {
   var fulldata = combinedData();
   Object.keys(fulldata).forEach(function(post) {
@@ -825,25 +889,10 @@ function parseAllVotes() {
       recognisedVotes[post]["type"] = voteType;
       recognisedVotes[post]["target"] = voteTarget;
       recognisedVotes[post]["time"] = fulldata[post]["t"];
+      recognisedVotes[post]["link"] = fulldata[post]["l"];
       recognisedVotes[post]["raw"] = raw;
     }
   });
-}
-
-function voteToText(post) {
-  var type = recognisedVotes[post]["type"];
-  var text = "[" + post + "] " + recognisedVotes[post]["user"];
-  if (type == 2) {
-    text += " votes " + recognisedVotes[post]["target"];
-  } else if (type == 1) {
-    text += " unvotes and votes " + recognisedVotes[post]["target"];
-  } else if (type == -1) {
-    text += " unvotes " + recognisedVotes[post]["target"];
-  } else {
-    text += " does absolutely nothing. This shouldn't happen.";
-  }
-  text += " (" + recognisedVotes[post]["raw"] + ")";
-  return text;
 }
 
 function getVoteType(vote) {
@@ -886,6 +935,126 @@ function getVoteTarget(vote) {
   }
 }
 
+function getTallyForRange(start, end) {
+  parseAllVotes();
+  var playerVotes = {};
+  var totalVotes = {};
+  Object.keys(recognisedVotes).forEach(function(post) {
+    post = parseInt(post);
+    if (post >= start && post <= end) {
+      var vote = recognisedVotes[post];
+      var type = vote["type"];
+      if (!playerVotes[vote["user"]]) {
+        playerVotes[vote["user"]] = {};
+      }
+      if (!playerVotes[vote["user"]]["post"] || parseInt(post) > playerVotes[vote["user"]]["post"]) {
+        playerVotes[vote["user"]]["post"] = post;
+        playerVotes[vote["user"]]["link"] = vote["link"];
+        if (type == 2 || type == 1) {
+          playerVotes[vote["user"]]["target"] = vote["target"];
+        } else if (type == -1) {
+          playerVotes[vote["user"]]["target"] = null;
+        }
+      }
+    }
+  });
+  for (var i in playerNames) {
+    if (playerStates[playerNames[i]] != -1 && playerStates[playerNames[i]] < currentDay) {
+      continue;
+    }
+    if (!playerVotes.hasOwnProperty(playerNames[i])) {
+      playerVotes[playerNames[i]] = {
+        "target": "",
+        "post": 0,
+        "link": ""
+      };
+    }
+  }
+  Object.keys(playerVotes).sort(function(a, b) {
+    return playerVotes[a]["post"] - playerVotes[b]["post"];
+  }).forEach(function(user) {
+    var target = playerVotes[user]["target"];
+    if (!totalVotes[target]) {
+      totalVotes[target] = [];
+    }
+    totalVotes[target].push([user, playerVotes[user]["post"], playerVotes[user]["link"]]);
+  });
+  return totalVotes;
+}
+
+function getVoteLogForRange(start, end) {
+  parseAllVotes();
+  var voteLog = "";
+  Object.keys(recognisedVotes).sort(function(a, b) {
+    return a - b;
+  }).filter(function(post) {
+    return post >= start && post <= end;
+  }).forEach(function(post) {
+    var type = recognisedVotes[post]["type"];
+    voteLog += "[" + post + "] ";
+    voteLog += recognisedVotes[post]["user"];
+    if (type == 2) {
+      voteLog += " votes " + recognisedVotes[post]["target"];
+    } else if (type == 1) {
+      voteLog += " unvotes and votes " + recognisedVotes[post]["target"];
+    } else if (type == -1) {
+      voteLog += " unvotes" + (recognisedVotes[post]["target"] != null ? " " + recognisedVotes[post]["target"] : "");
+    } else {
+      //Should not happen
+      voteLog += " exposes a bug in this script";
+    }
+    voteLog += " (" + getPostLink(recognisedVotes[post]["link"]) + ")\n";
+  });
+  return voteLog;
+}
+
+function tallyToBbcode(tally) {
+  var bbcode = "";
+  Object.keys(tally).filter(function(target) {
+    return (target == "" ? false : true);
+  }).sort(function(a, b) {
+    return tally[b].length - tally[a].length;
+  }).forEach(function(target) {
+    var voterList = [];
+    for (var voter in tally[target]) {
+      voterList.push(tally[target][voter][0]);
+    }
+    bbcode += "[b]" + target + " (" + tally[target].length + ")[/b] - " + voterList.join(", ") + "\n";
+  });
+  if (tally.hasOwnProperty("")) {
+    var voterList = [];
+    for (var i in tally[""]) {
+      voterList.push(tally[""][i][0]);
+    }
+    bbcode += "[b]Yet to vote (" + voterList.length + ")[b] - " + voterList.join(", ");
+  }
+  return bbcode;
+}
+
+function tallyToHtml(tally) {
+  var html = "";
+  Object.keys(tally).filter(function(target) {
+    return (target == "" ? false : true);
+  }).sort(function(a, b) {
+    //This sorts tally by the length of each voter list - how many people are voting for user a vs how many people are voting for user b
+    return tally[b].length - tally[a].length;
+  }).forEach(function(target) {
+    var voterList = "";
+    for (var voter in tally[target]) {
+      voterList += "<span class='voter-wrap'><a class='vote-link' href='" + getPostLink(tally[target][voter][2]) + "'>" + tally[target][voter][1] + "</a><span class='voter-name'>" + tally[target][voter][0] + "</span></span>";
+    }
+    html += "<span class='vote-count'>" + tally[target].length + "</span><span class='voted-name'>" + target + "</span><span class='voter-name-list'>" + voterList + "</span><br>";
+  });
+  if (tally.hasOwnProperty("")) {
+    var voterList = "";
+    for (var i in tally[""]) {
+      voterList += "<span class='voter-wrap'><span class='voter-name'>" + tally[""][i][0] + "</span></span>";
+    }
+    html += "<span class='vote-count no-vote'>" + tally[""].length + "</span><span class='voted-name no-vote'>No vote</span><span class='voter-name-list'>" + voterList + "</span><br>";
+  }
+  return html;
+}
+
 function matchPlayer(string) {
   var closestMatch = playerNames[0];
   var highestScore = diceCoefficient(string, playerNames[0]);
@@ -914,22 +1083,22 @@ function matchPlayer(string) {
   return closestMatch;
 }
 
-function bigrams(string) {
-  var bigrams = [];
+function getBigrams(string) {
+  var getBigrams = [];
   for (var i = 0; i < string.length - 1; i++) {
-    bigrams.push(string.slice(i, i+2));
+    getBigrams.push(string.slice(i, i+2));
   }
-  return bigrams;
+  return getBigrams;
 }
 
-function diceCoefficient(str1, str2) {
-  str1 = str1.toLowerCase();
-  str2 = str2.toLowerCase();
-  if (str1 == str2) {
+function diceCoefficient(a, b) {
+  a = a.toLowerCase();
+  b = b.toLowerCase();
+  if (a == b) {
     return 1;
   }
-  var pairs1 = bigrams(str1);
-  var pairs2 = bigrams(str2);
+  var pairs1 = getBigrams(a);
+  var pairs2 = getBigrams(b);
   var totalSize = pairs1.length + pairs2.length;
   var score = 0;
   for (a in pairs1) {
@@ -955,9 +1124,42 @@ function addGm(gmName) {
 function addPlayer(playerName) {
   if ($.inArray(playerName, playerNames) == -1) {
     playerNames.push(playerName);
-    $("#player-list").append("<li class='player-name' name='" + playerName + "'><button class='edit-player'>" + playerName + "</button><span class='sub-list'></span><span class='player-controls'><button class='add-sub'>+Sub</button><button>-</button></span></li>");
     localStorage.setItem("playerNames" + threadId, JSON.stringify(playerNames));
+    addPlayerGui(playerName);
   }
+}
+
+function addPlayerGui(playerName) {
+  return $("<li />", {
+    class: "player-name",
+    name: playerName
+  })
+    .append($("<div />", {
+      class: "player-number"
+    }))
+    .append($("<button />", {
+      class: "edit-player",
+      text: playerName
+    }))
+    .append($("<button />", {
+      class: "player-state",
+      text: "alive"
+    }))
+    .append($("<span />", {
+      class: "sub-list"
+    }))
+    .append($("<span />", {
+      class: "player-controls"
+    })
+    .append($("<button />", {
+      class: "add-sub",
+      text: "+Alias"
+    }))
+    .append($("<button />", {
+      class: "remove-player",
+      text: "-"
+    })))
+    .appendTo("#player-list");
 }
 
 function removePlayer(playerName) {
@@ -965,6 +1167,15 @@ function removePlayer(playerName) {
   if (index >= 0) {
     playerNames.splice(index, 1);
     localStorage.setItem("playerNames" + threadId, JSON.stringify(playerNames));
+    if (subNames.hasOwnProperty(playerName)) {
+      console.log(playerName);
+      delete subNames[playerName];
+      localStorage.setItem("subNames" + threadId, JSON.stringify(subNames));
+    }
+    if (playerStates.hasOwnProperty(playerName)) {
+      delete playerStates[playerName];
+      localStorage.setItem("playerStates" + threadId, JSON.stringify(playerStates));
+    }
     $(".player-name[name='" + playerName + "']").remove();
   }
 }
@@ -984,6 +1195,10 @@ function addSub(playerName, subName) {
   }
   subNames[playerName].push(subName);
   localStorage.setItem("subNames" + threadId, JSON.stringify(subNames));
+  addSubGui(playerName, subName);
+}
+
+function addSubGui(playerName, subName) {
   if ($(".player-name[name='" + playerName + "'] .sub-list").text().length > 0) {
     $(".player-name[name='" + playerName + "'] .sub-list").append("<button class='sub-name'>" + subName + "</button>");
   } else {
@@ -1004,49 +1219,16 @@ function removeSub(playerName, subName) {
   }
 }
 
-function resetData() {
-  localStorage.removeItem("tallyStatus" + threadId);
-  localStorage.removeItem("gmNames" + threadId);
-  localStorage.removeItem("playerNames" + threadId);
-  localStorage.removeItem("subNames" + threadId);
-  localStorage.removeItem("dayCount" + threadId);
-  localStorage.removeItem("savedTallies" + threadId);
-  localStorage.removeItem("dayOptions" + threadId);
-  localStorage.removeItem("nightTime" + threadId);
-  $(".full-save, .partial-save").each(function() {
-    pg = $(this).text();
-    localStorage.removeItem("pageData" + threadId + "-" + pg);
-    localStorage.removeItem("pageStatus" + threadId + "-" + pg);
-  });
-  gmNames = [];
-  playerNames = [];
-  subNames = {};
-  recognisedVotes = {};
-  dayOptions = {};
-  savedTallies = {};
-  curPage = 0;
-  postTotal = 0;
-  tallyStatus = 0;
-  currentDay = 1;
-  dayTotal = 1;
-  nightTime = 2000;
-  popoutTally = false;
-  unvotingWord = "unvote";
-  votingWord = "vote";
-}
-
-function resetScript() {
-  $("#fmu-main-container").remove();
-  $("#qrform").after("<button id='start-tally'>Tallyho</button>");
-  $("#start-tally").click(function() {
-    localStorage.setItem("tallyStatus" + threadId, "1");
-    createInterface();
-    $(this).remove();
-  });
+function getThreadId() {
+  return $("a.smallfont").first().attr("href").split("&")[0].split("=")[1];
 }
 
 function getForumLink(thread, page) {
   return "http://forums.kingdomofloathing.com/vb/showthread.php?t=" + thread + "&page=" + page;
+}
+
+function getPostLink(postId) {
+  return "http://forums.kingdomofloathing.com/vb/showthread.php?p=" + postId;
 }
 
 function getPageStatus(thread, page) {
@@ -1086,7 +1268,8 @@ function generateData() {
         postData = {
           "u": username, //User
           "t": $(this).find(".thead:first").text().trim(), //Time
-          "v": votingData //Voting candidates
+          "v": votingData, //Voting candidates
+          "l": $(this).find(".thead > [id^=postcount]").attr("id").replace("postcount","")
         };
       } else {
         //Post content
@@ -1103,4 +1286,48 @@ function generateData() {
   } else {
     alert("Could not save data - page is " + curPage + " and thread id is " + threadId);
   }
+}
+
+function resetData() {
+  localStorage.removeItem("tallyStatus" + threadId);
+  localStorage.removeItem("gmNames" + threadId);
+  localStorage.removeItem("playerNames" + threadId);
+  localStorage.removeItem("subNames" + threadId);
+  localStorage.removeItem("dayCount" + threadId);
+  localStorage.removeItem("savedTallies" + threadId);
+  localStorage.removeItem("dayOptions" + threadId);
+  localStorage.removeItem("nightTime" + threadId);
+  localStorage.removeItem("playerStates" + threadId);
+  $(".full-save, .partial-save").each(function() {
+    pg = $(this).text();
+    localStorage.removeItem("pageData" + threadId + "-" + pg);
+    localStorage.removeItem("pageStatus" + threadId + "-" + pg);
+  });
+  gmNames = [];
+  playerNames = [];
+  subNames = {};
+  recognisedVotes = {};
+  dayOptions = {};
+  savedTallies = {};
+  playerStates = {};
+  nicknames = {};
+  curPage = 0;
+  postTotal = 0;
+  tallyStatus = 0;
+  currentDay = 1;
+  dayTotal = 1;
+  nightTime = 2000;
+  popoutTally = false;
+  unvotingWord = "unvote";
+  votingWord = "vote";
+}
+
+function resetScript() {
+  $("#fmu-main-container").remove();
+  $("#qrform").after("<button id='start-tally'>Turn on Forum Mafia Utilities for this thread</button>");
+  $("#start-tally").click(function() {
+    localStorage.setItem("tallyStatus" + threadId, "1");
+    createInterface();
+    $(this).remove();
+  });
 }
