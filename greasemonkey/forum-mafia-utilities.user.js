@@ -153,6 +153,10 @@ GM_addStyle(":root {\
   display: inline-block;\
   padding: 5px 8px;\
 }\
+.unrecognised-voter {\
+  background-color: #f00;\
+  color: #fff;\
+}\
 .vote-link {\
   background-color: var(--dark-contrast-color);\
   color: #fff !important;\
@@ -226,13 +230,6 @@ GM_addStyle(":root {\
 .dead-player .edit-player{\
   text-decoration: line-through;\
 }\
-.player-state {\
-  -moz-appearance: none;\
-  border: none;\
-  padding: 4px;\
-}\
-.player-state option {\
-}\
 .player-name button {\
   background-color: white;\
   border: none;\
@@ -286,6 +283,8 @@ nightTime = 2000;
 dayOptions = {};
 popoutTally = false;
 
+unrecognisedVoters = [];
+
 $(document).ready(function () {
   threadId = getThreadId();
   tallyStatus = parseInt(localStorage.getItem("tallyStatus" + threadId));
@@ -331,6 +330,9 @@ function createInterface() {
   }
   if (localStorage.getItem("playerStates" + threadId)) {
     playerStates = JSON.parse(localStorage.getItem("playerStates" + threadId));
+  }
+  if (localStorage.getItem("unrecognisedVoters" + threadId)) {
+    unrecognisedVoters = JSON.parse(localStorage.getItem("unrecognisedVoters" + threadId));
   }
   $("#qrform").after("<div id='fmu-main-container'></div>");
   $("<div />", {
@@ -514,7 +516,6 @@ function createInterface() {
     for (var i = 0; i < playerNames.length; i++) {
       var playerEle = addPlayerGui(playerNames[i]);
       if (playerStates.hasOwnProperty(playerNames[i])) {
-        console.log(playerEle);
         $(".player-name[name='" + playerNames[i] + "'] .player-state").text(getPlayerState(playerStates[playerNames[i]]));
         if (playerStates[playerNames[i]] == -1) {
           playerEle.addClass("alive-player");
@@ -536,6 +537,9 @@ function createInterface() {
     $("#toggle-game-configuration").text("Hide game configuration");
   }
   $("#update-tally").click(function() {
+    if (playerNames.length > 0) {
+      generateNicknames();
+    }
     var start = 1;
     var end = 200000;
     if (dayOptions[currentDay] && dayOptions[currentDay]["startSelected"] == "start-post") {
@@ -687,13 +691,13 @@ function createInterface() {
     $("#paste-wrapper").slideUp();
     importedPlayers = $("#paste-area").val().split("\n");
     for (var i = 0; i < importedPlayers.length; i++) {
-      importedPlayers[i] = importedPlayers[i].trim();
       if (importedPlayers[i].indexOf(".") >= 0) {
         importedPlayers[i] = importedPlayers[i].split(".")[1];
       }
       if (importedPlayers[i].indexOf(")") >= 0) {
         importedPlayers[i] = importedPlayers[i].split(")")[1];
       }
+      importedPlayers[i] = importedPlayers[i].trim();
     }
     importedPlayers = importedPlayers.filter(Boolean);
     for (var i = 0; i < importedPlayers.length; i++) {
@@ -707,19 +711,7 @@ function createInterface() {
     var oldName = $(this).text();
     var newName = prompt("Enter new player name", oldName);
     if (newName) {
-      var i = $.inArray(oldName, playerNames);
-      playerNames[i] = newName;
-      localStorage.setItem("playerNames" + threadId, JSON.stringify(playerNames));
-      if (subNames.hasOwnProperty(oldName)) {
-        subNames[newName] = subNames[oldName];
-        delete subNames[oldName];
-        localStorage.setItem("subNames" + threadId, JSON.stringify(subNames));
-      }
-      if (playerStates.hasOwnProperty(oldName)) {
-        playerStates[newName] = playerStates[oldName];
-        delete playerStates[oldName];
-        localStorage.setItem("playerStates" + threadId, JSON.stringify(playerStates));
-      }
+      updatePlayerName(oldName, newName);
       $(this).text(newName);
       $(this).parents(".player-name").attr("name", newName);
     } else if (newName == "") {
@@ -774,6 +766,31 @@ function createInterface() {
   });
   if (gmNames.length > 0) {
     generateData();
+  }
+}
+
+function updatePlayerName(oldName, newName) {
+  var i = $.inArray(oldName, playerNames);
+  playerNames[i] = newName;
+  localStorage.setItem("playerNames" + threadId, JSON.stringify(playerNames));
+  if (subNames.hasOwnProperty(oldName)) {
+    subNames[newName] = subNames[oldName];
+    delete subNames[oldName];
+    localStorage.setItem("subNames" + threadId, JSON.stringify(subNames));
+  }
+  if (playerStates.hasOwnProperty(oldName)) {
+    playerStates[newName] = playerStates[oldName];
+    delete playerStates[oldName];
+    localStorage.setItem("playerStates" + threadId, JSON.stringify(playerStates));
+  }
+  for (var i in unrecognisedVoters) {
+    $(".unrecognised-voter[name='" + oldName + "']").attr("name", newName);
+    if (diceCoefficient(unrecognisedVoters[i], newName) > 0.9) {
+      unrecognisedVoters.splice(i, 1);
+      localStorage.setItem("unrecognisedVoters" + threadId, JSON.stringify(unrecognisedVoters));
+      $(".unrecognised-voter[name='" + newName + "']").removeClass("unrecognised-voter");
+      break;
+    }
   }
 }
 
@@ -945,6 +962,9 @@ function getTallyForRange(start, end) {
       var vote = recognisedVotes[post];
       var type = vote["type"];
       if (!playerVotes[vote["user"]]) {
+        if (playerNames.length > 0 && $.inArray(vote["user"], playerNames) == -1) {
+          registerUnrecognisedVoter(vote["user"]);
+        }
         playerVotes[vote["user"]] = {};
       }
       if (!playerVotes[vote["user"]]["post"] || parseInt(post) > playerVotes[vote["user"]]["post"]) {
@@ -1041,7 +1061,11 @@ function tallyToHtml(tally) {
   }).forEach(function(target) {
     var voterList = "";
     for (var voter in tally[target]) {
-      voterList += "<span class='voter-wrap'><a class='vote-link' href='" + getPostLink(tally[target][voter][2]) + "'>" + tally[target][voter][1] + "</a><span class='voter-name'>" + tally[target][voter][0] + "</span></span>";
+      if ($.inArray(tally[target][voter][0], unrecognisedVoters) >= 0) {
+        voterList += "<span class='voter-wrap'><a class='vote-link' href='" + getPostLink(tally[target][voter][2]) + "'>" + tally[target][voter][1] + "</a><span class='voter-name unrecognised-voter' name='" + tally[target][voter][0] + "'>" + tally[target][voter][0] + "</span></span>";
+      } else {
+        voterList += "<span class='voter-wrap'><a class='vote-link' href='" + getPostLink(tally[target][voter][2]) + "'>" + tally[target][voter][1] + "</a><span class='voter-name'>" + tally[target][voter][0] + "</span></span>";
+      }
     }
     html += "<span class='vote-count'>" + tally[target].length + "</span><span class='voted-name'>" + target + "</span><span class='voter-name-list'>" + voterList + "</span><br>";
   });
@@ -1055,32 +1079,23 @@ function tallyToHtml(tally) {
   return html;
 }
 
-function matchPlayer(string) {
-  var closestMatch = playerNames[0];
-  var highestScore = diceCoefficient(string, playerNames[0]);
-  for (var i in playerNames) {
-    var score = diceCoefficient(string, playerNames[i]);
-    if (score == 1) {
-      return playerNames[i];
-    }
-    if (score > highestScore) {
-      closestMatch = playerNames[i];
-      highestScore = score;
-    }
-  }
-  for (var i in subNames) {
-    for (var j in subNames[i]) {
-      var score = diceCoefficient(string, subNames[i][j]);
-      if (score == 1) {
-        return i;
-      }
-      if (score > highestScore) {
-        closestMatch = i;
-        highestScore = score;
+function registerUnrecognisedVoter(user) {
+  if ($.inArray(user, unrecognisedVoters) == -1) {
+    var recognised = false;
+    for (var i in playerNames) {
+      if (diceCoefficient(playerNames[i], user) > 0.9) {
+        $(".player-name[name='" + playerNames[i] + "'] .edit-player").text(user);
+        $(".player-name[name='" + playerNames[i] + "']").attr("name", user);
+        updatePlayerName(playerNames[i], user);
+        recognised = true;
+        return;
       }
     }
   }
-  return closestMatch;
+  if (!recognised) {
+    unrecognisedVoters.push(user);
+    localStorage.setItem("unrecognisedVoters" + threadId, JSON.stringify(unrecognisedVoters));
+  }
 }
 
 function getBigrams(string) {
@@ -1112,6 +1127,46 @@ function diceCoefficient(a, b) {
   return 2 * score / totalSize;
 }
 
+function matchPlayer(string) {
+  var closestMatch = playerNames[0];
+  var highestScore = diceCoefficient(string, playerNames[0]);
+  for (var i in playerNames) {
+    var score = diceCoefficient(string, playerNames[i]);
+    if (score == 1) {
+      return playerNames[i];
+    }
+    if (score > highestScore) {
+      closestMatch = playerNames[i];
+      highestScore = score;
+    }
+  }
+  for (var i in subNames) {
+    for (var j in subNames[i]) {
+      var score = diceCoefficient(string, subNames[i][j]);
+      if (score == 1) {
+        return i;
+      }
+      if (score > highestScore) {
+        closestMatch = i;
+        highestScore = score;
+      }
+    }
+  }
+  for (var i in nicknames) {
+    for (var j in nicknames[i]) {
+      var score = diceCoefficient(string, nicknames[i][j]);
+      if (score == 1) {
+        return i;
+      }
+      if (score > highestScore) {
+        closestMatch = i;
+        highestScore = score;
+      }
+    }
+  }
+  return closestMatch;
+}
+
 function addGm(gmName) {
   gmNames.push(gmName);
   localStorage.setItem("gmNames" + threadId, JSON.stringify(gmNames));
@@ -1125,18 +1180,23 @@ function addPlayer(playerName) {
   if ($.inArray(playerName, playerNames) == -1) {
     playerNames.push(playerName);
     localStorage.setItem("playerNames" + threadId, JSON.stringify(playerNames));
+    for (var i in unrecognisedVoters) {
+      if (diceCoefficient(unrecognisedVoters[i], playerName) > 0.9) {
+        unrecognisedVoters.splice(i, 1);
+        localStorage.setItem("unrecognisedVoters" + threadId, JSON.stringify(unrecognisedVoters));
+        $(".unrecognised-voter[name='" + playerName + "']").removeClass("unrecognised-voter");
+        break;
+      }
+    }
     addPlayerGui(playerName);
   }
 }
 
 function addPlayerGui(playerName) {
   return $("<li />", {
-    class: "player-name",
+    class: "player-name alive-player",
     name: playerName
   })
-    .append($("<div />", {
-      class: "player-number"
-    }))
     .append($("<button />", {
       class: "edit-player",
       text: playerName
@@ -1168,7 +1228,6 @@ function removePlayer(playerName) {
     playerNames.splice(index, 1);
     localStorage.setItem("playerNames" + threadId, JSON.stringify(playerNames));
     if (subNames.hasOwnProperty(playerName)) {
-      console.log(playerName);
       delete subNames[playerName];
       localStorage.setItem("subNames" + threadId, JSON.stringify(subNames));
     }
@@ -1182,7 +1241,12 @@ function removePlayer(playerName) {
 
 function clearPlayers() {
   playerNames = [];
+  subNames = {};
+  nicknames = {};
+  playerStates = {};
   localStorage.setItem("playerNames" + threadId, JSON.stringify(playerNames));
+  localStorage.setItem("subNames" + threadId, JSON.stringify(subNames));
+  localStorage.setItem("playerStates" + threadId, JSON.stringify(playerStates));
   $("#player-list").text("");
 }
 
@@ -1217,6 +1281,83 @@ function removeSub(playerName, subName) {
     localStorage.setItem("subNames" + threadId, JSON.stringify(subNames));
     $(".player-name[name='" + playerName + "']").find(".sub-name").filter(function() {return $(this).text() == subName;}).remove();
   }
+}
+
+function generateNicknames() {
+  nicknames;
+  for (var i in playerNames) {
+    var player = playerNames[i];
+    if (!nicknames.hasOwnProperty(player)) {
+      nicknames[player] = [];
+    }
+    if (player.indexOf(" ") >= 0) {
+      var newNick = "";
+      var splitName = player.split(" ");
+      for (var c in splitName) {
+        newNick += splitName[c].charAt(0);
+      }
+      nicknames[player].push(newNick);
+    }
+    if (player.indexOf("_") >= 0) {
+      var newNick = "";
+      var splitName = player.split("_");
+      for (var c in splitName) {
+        newNick += splitName[c].charAt(0);
+      }
+      if ($.inArray(newNick, nicknames[player]) == -1) {
+        nicknames[player].push(newNick);
+      }
+    }
+    var uppercaseName = getUpperCase(player);
+    var nonLowercaseName = getNonLowerCase(player);
+    var lowercaseName = getLowerCase(player);
+    if (uppercaseName.length > 1 && lowercaseName.length > 2) {
+      if ($.inArray(nonLowercaseName, nicknames[player]) == -1) {
+        nicknames[player].push(nonLowercaseName);
+      }
+    } else if(nonLowercaseName.length > 5 && lowercaseName.length > 1) {
+      if ($.inArray(lowercaseName, nicknames[player]) == -1) {
+        nicknames[player].push(lowercaseName);
+      }
+    }
+  }
+}
+
+function getUpperCase(string) {
+  var result = "";
+  for (var i in string) {
+    var c = string.charAt(i);
+    if (c.toUpperCase() == c.toLowerCase()) {
+      continue;
+    } else if (c == c.toUpperCase()) {
+      result += c;
+    }
+  }
+  return result;
+}
+
+function getNonLowerCase(string) {
+  var result = "";
+  for (var i in string) {
+    var c = string.charAt(i);
+    if (c == c.toUpperCase()) {
+      result += c;
+    }
+  }
+  return result;
+}
+
+function getLowerCase(string) {
+  var result = "";
+  for (var i in string) {
+    var c = string.charAt(i);
+    if (c.toUpperCase() == c.toLowerCase()) {
+      continue;
+    } else if (c == c.toLowerCase()) {
+      result += c;
+    }
+  }
+  return result;
 }
 
 function getThreadId() {
