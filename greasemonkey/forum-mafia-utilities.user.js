@@ -8,51 +8,81 @@
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js
 // ==/UserScript==
 
-GM_addStyle(".page-block.full-save {\
-  background-color: #d09;\
-  color: #fff !important;\
+GM_addStyle(":root {\
+  --dark-color: #e91e63;\
+  --dark-color-highlighted: #d81b60;\
+  --med-color: #e1bee7;\
+  --med-color-highlighted: #ce93d8;\
+  --light-color: #eceff1;\
+  --light-color-highlighted: #cfd8dc;\
+  --dark-contrast-color: #546e7a;\
+  --dark-contrast-color-highlighted: #455a64;\
+  --med-contrast-color: #e91e63;\
 }\
-.full-save:hover {\
-  background-color: #c40087;\
-}\
-.partial-save {\
-  background-color: #fae;\
-}\
-.partial-save:hover {\
-  background-color: #e6b3ff;\
-}\
-.empty-save {\
-  background-color: #eee;\
-}\
-.empty-save:hover {\
-  background-color: #e1e1e1;\
-}\
-#tally-container {\
+#fmu-main-container {\
   margin-bottom: 10px;\
   padding-top: 10px;\
 }\
-#page-controls {\
-  display: inline-block;\
+#page-container {\
+  margin: 10px 5px;\
 }\
-.page-block {\
+.page-link.full-save {\
+  background-color: var(--dark-color);\
+  color: #fff !important;\
+}\
+.full-save:hover {\
+  background-color: var(--dark-color-highlighted);\
+}\
+.partial-save {\
+  background-color: var(--med-color);\
+}\
+.partial-save:hover {\
+  background-color: var(--med-color-highlighted);\
+}\
+.empty-save {\
+  background-color: var(--light-color);\
+}\
+.empty-save:hover {\
+  background-color: var(--light-color-highlighted);\
+}\
+.full-data-day {\
+  background-color: var(--dark-color);\
+  color: #fff !important;\
+}\
+.full-data-day:hover {\
+  background-color: var(--dark-color-highlighted);\
+}\
+.partial-data-day {\
+  background-color: var(--med-color);\
+}\
+.partial-data-day:hover {\
+  background-color: var(--med-color-highlighted);\
+}\
+.empty-data-day {\
+  background-color: var(--light-color);\
+}\
+.empty-data-day:hover {\
+  background-color: var(--light-color-highlighted);\
+}\
+.page-link {\
   color: #333 !important;\
   display: inline-block;\
   padding: 5px;\
   text-align: center;\
   text-decoration: none;\
-  width: 17px;\
+  min-width: 18px;\
 }\
 .page-selected, .day-selected {\
   padding-bottom: 2px !important;\
-  border-bottom: 3px solid #666;\
+  border-bottom: 3px solid var(--dark-contrast-color);\
 }\
 #page-label {\
-  background-color: #555;\
-  color: #d09;\
+  background-color: var(--dark-contrast-color);\
+  color: var(--dark-color);\
   display: inline-block;\
   padding: 5px 10px;\
 }\
-#tally-container button, #start-tally {\
+#fmu-main-container button, #start-tally {\
   display: inline-block;\
   height: 27px;\
   margin: 5px;\
@@ -61,60 +91,77 @@ GM_addStyle(".page-block.full-save {\
   margin: 0 5px;\
 }\
 .day-select {\
-  background-color: #fae;\
   display: inline-block;\
   padding: 5px 10px;\
 }\
 .day-select:hover {\
-  background-color: #e6b3ff;\
   cursor: pointer;\
 }\
 #add-day {\
-  background-color: #d09;\
-  color: #fff;\
+  background-color: var(--light-color);\
+  color: var(--dark-color);\
   display: inline-block;\
-  margin-right: 10px;\
   padding: 5px;\
   text-align: center;\
   width: 17px;\
 }\
 #add-day:hover {\
-  background-color: #c08;\
+  background-color: var(--light-color-highlighted);\
   cursor: pointer;\
 }\
 #remove-day {\
-  background-color: #666;\
-  color: #d09;\
+  background-color: var(--dark-contrast-color);\
+  color: var(--light-color);\
   display: inline-block;\
-  margin-left: 10px;\
   padding: 5px;\
   text-align: center;\
   width: 17px;\
 }\
 #remove-day:hover {\
-  background-color: #555;\
+  background-color: var(--dark-contrast-color-highlighted);\
   cursor: pointer;\
 }\
 #day-area {\
-  background-color: #eee;\
+  background-color: var(--light-color);\
   margin: 0 5px;\
   padding: 10px;\
 }\
-#tally-area {\
-  margin-bottom: 10px;\
+#tally-body {\
+  padding: 10px 0;\
 }\
-.voter-names {\
-  \
+#tally-container.floating {\
+  background-color: var(--light-color);\
+  left: 0;\
+  bottom: 0;\
+  opacity: 0.1;\
+  padding: 0 10px;\
+  position: fixed;\
+}\
+#tally-container.floating:hover {\
+  opacity: 0.9;\
+}\
+.voter-name-list {\
+  margin: 5px;\
+}\
+.voter-name {\
+  background-color: white;\
+  display: inline-block;\
+  margin: 0 2px;\
+  padding: 5px 8px;\
 }\
 .voted-name {\
-  background-color: #fff;\
+  background-color: var(--dark-contrast-color);\
+  color: #fff;\
   display: inline-block;\
-  margin: 2px 0;\
+  font-weight: bold;\
+  margin-top: 5px;\
+  margin-bottom: 5px;\
   padding: 8px;\
 }\
 .vote-count {\
-  background-color: #d09;\
+  background-color: #e91e63;\
   color: #fff;\
+  display: inline-block;\
   font-weight: bold;\
   padding: 8px;\
 }\
@@ -123,7 +170,7 @@ GM_addStyle(".page-block.full-save {\
   opacity: 0;\
 }\
 #game-configuration {\
-  background-color: #eee;\
+  background-color: var(--light-color);\
   display: none;\
   margin: 5px;\
   padding: 10px;\
@@ -133,7 +180,7 @@ GM_addStyle(".page-block.full-save {\
   border: none;\
 }\
 .boundary-option-selected {\
-  border-bottom: 3px solid #666 !important;\
+  border-bottom: 3px solid var(--dark-contrast-color) !important;\
 }\
 #paste-wrapper {\
   display: none;\
@@ -181,6 +228,7 @@ dayTotal = 1;
 currentDay = 1;
 nightTime = 2000;
 dayOptions = {};
+popoutTally = false;
 
 $(document).ready(function () {
   threadId = $("a.smallfont").first().attr("href").split("&")[0].split("=")[1];
@@ -225,18 +273,16 @@ function createInterface() {
   if (localStorage.getItem("savedTallies" + threadId)) {
     savedTallies = JSON.parse(localStorage.getItem("savedTallies" + threadId));
   }
-  $("#qrform").after("<div id='tally-container'></div>");
+  $("#qrform").after("<div id='fmu-main-container'></div>");
   $("<div />", {
-    id: "page-label",
-    text: "Page"
-  }).appendTo("#tally-container");
-  $("<div />", {
-    id: "page-controls"
-  }).appendTo("#tally-container");
-  $("<button />", {
-    id: "toggle-game-configuration",
-    text: "Show game configuration"
-  }).appendTo("#tally-container");
+    id: "page-container"
+  })
+    .append($("<span />", {
+      id: "page-label",
+      text: "Page"
+    })).append($("<span />", {
+      id: "page-controls"
+    })).appendTo("#fmu-main-container");
   $("<div />", {
     id: "day-controls"
   })
@@ -250,13 +296,19 @@ function createInterface() {
     .append($("<div />", {
       id: "remove-day",
       text: "-"
-    })).appendTo("#tally-container");
+    })).appendTo("#fmu-main-container");
   $("<div />", {
     id: "day-area"
   })
     .append($("<div />", {
-      id: "tally-area"
+      id: "tally-container"
+    })
+    .append($("<div />", {
+      id: "tally-body"
     }))
+    .append($("<div />", {
+      id: "tally-controls"
+    })
     .append($("<button />", {
       id: "update-tally",
       text: "Update tally"
@@ -269,6 +321,10 @@ function createInterface() {
       id: "copy-voting-log",
       text: "Copy voting log"
     }))
+    .append($("<button />", {
+      id: "toggle-tally-display",
+      text: "Pop out"
+    }))))
     .append($("<br />"))
     .append($("<span />", {
       text: "Start"
@@ -293,7 +349,11 @@ function createInterface() {
       id: "end-time",
       class: "boundary-option"
     }))
-    .appendTo("#tally-container");
+    .appendTo("#fmu-main-container");
+  $("<button />", {
+    id: "toggle-game-configuration",
+    text: "Show game configuration"
+  }).appendTo("#fmu-main-container");
   $("<div />", {
     id: "game-configuration"
   })
@@ -357,11 +417,11 @@ function createInterface() {
       id: "reset-script",
       text: "Clear script data"
     }))
-    .appendTo($("#tally-container"));
+    .appendTo($("#fmu-main-container"));
   for (var pg = 1; pg <= pageTotal; pg++) {
     pageStatus = getPageStatus(threadId, pg);
     newBlock = $("<a />", {
-      class: "page-block",
+      class: "page-link",
       href: getForumLink(threadId, pg),
       page: pg,
       text: pg
@@ -383,6 +443,7 @@ function createInterface() {
       name: day,
       text: "Day " + day
     }).appendTo($("#day-tab-container"));
+    colourDayTab(day);
   }
   switchDay(currentDay);
   if (gmNames.length > 0) {
@@ -419,17 +480,33 @@ function createInterface() {
     var tally = tallyVotesInRange(start, end);
     savedTallies[currentDay] = tally;
     localStorage.setItem("savedTallies" + threadId, JSON.stringify(savedTallies));
-    $("#tally-area").html(tallyToHtml(tally));
+    $("#tally-body").html(tallyToHtml(tally));
   });
   $("#copy-tally").click(function () {
     if (savedTallies[currentDay]) {
-      $("#tally-container").append("<textarea id='data-container'></textarea>");
+      $("#fmu-main-container").append("<textarea id='data-container'></textarea>");
       $("#data-container").val(tallyToBbcode(savedTallies[currentDay]));
       $("#data-container").select();
       document.execCommand("copy");
       $("#data-container").remove();
     }
   });
+  $("#toggle-tally-display").click(function() {
+    if (popoutTally == true) {
+      popoutTally = false;
+      localStorage.setItem("tallyDisplay" + threadId, "");
+      $("#tally-container").removeClass("floating");
+      $(this).text("Pop out");
+    } else {
+      popoutTally = true;
+      localStorage.setItem("tallyDisplay" + threadId, "1");
+      $("#tally-container").addClass("floating");
+      $(this).text("Close");
+    }
+  });
+  if (localStorage.getItem("tallyDisplay" + threadId)) {
+    $("#toggle-tally-display").click();
+  }
   $("#toggle-game-configuration").click(function() {
     if ($("#game-configuration").is(":visible")) {
       localStorage.setItem("tallyStatus" + threadId, "1");
@@ -469,6 +546,7 @@ function createInterface() {
       dayOptions[currentDay]["startPost"] = post;
       dayOptions[currentDay]["startSelected"] = "start-post";
       localStorage.setItem("dayOptions" + threadId, JSON.stringify(dayOptions));
+      colourDayTab(currentDay);
       switchDay(currentDay);
     }
   });
@@ -490,6 +568,7 @@ function createInterface() {
       dayOptions[currentDay]["endPost"] = post;
       dayOptions[currentDay]["endSelected"] = "end-post";
       localStorage.setItem("dayOptions" + threadId, JSON.stringify(dayOptions));
+      colourDayTab(currentDay);
       switchDay(currentDay);
     }
   });
@@ -623,9 +702,9 @@ function switchDay(day) {
     $("#end-time").text(nightTime);
   }
   if (savedTallies[day]) {
-    $("#tally-area").html(tallyToHtml(savedTallies[day]));
+    $("#tally-body").html(tallyToHtml(savedTallies[day]));
   } else {
-    $("#tally-area").html("");
+    $("#tally-body").html("");
   }
 }
 
@@ -633,6 +712,7 @@ function changeDayCount(change) {
   if (change > 0) {
     dayTotal++;
     $("#day-tab-container").append("<div class='day-select' name='" + dayTotal + "'>Day " + dayTotal + "</div>")
+    colourDayTab(dayTotal);
   } else {
     if (dayTotal > 1) {
       dayTotal--;
@@ -644,6 +724,22 @@ function changeDayCount(change) {
     }
   }
   localStorage.setItem("dayCount" + threadId, dayTotal + "");
+}
+
+function colourDayTab(day) {
+  var dayTab = $(".day-select[name='" + day + "']");
+  dayTab.removeClass("partial-data-day").removeClass("full-data-day").removeClass("empty-data-day");
+  if (dayOptions[day]) {
+    if (dayOptions[day]["startSelected"] && dayOptions[day]["endSelected"]) {
+      dayTab.addClass("full-data-day")
+    } else if (dayOptions[day]["startSelected"] || dayOptions[day]["endSelected"]) {
+      dayTab.addClass("partial-data-day");
+    } else {
+      dayTab.addClass("empty-data-day");
+    }
+  } else {
+    dayTab.addClass("empty-data-day");
+  }
 }
 
 function combinedData() {
@@ -668,9 +764,14 @@ function tallyToBbcode(tally) {
 function tallyToHtml(tally) {
   var html = "";
   Object.keys(tally).sort(function(a, b) {
+    //This sorts tally by the length of each voter list - how many people are voting for user a vs how many people are voting for user b
     return tally[b].length - tally[a].length;
   }).forEach(function(target) {
-    html += "<span class='vote-count'>" + tally[target].length + "</span><span class='voted-name'>" + target + "</span> - <span class='voter-names'>" + tally[target].join(", ") + "</span><br>";
+    var voterList = "";
+    for (var voter in tally[target]) {
+      voterList += "<span class='voter-name'>" + tally[target][voter] + "</span>";
+    }
+    html += "<span class='vote-count'>" + tally[target].length + "</span><span class='voted-name'>" + target + "</span><span class='voter-name-list'>" + voterList + "</span><br>";
   });
   return html;
 }
@@ -813,6 +914,14 @@ function matchPlayer(string) {
   return closestMatch;
 }
 
+function bigrams(string) {
+  var bigrams = [];
+  for (var i = 0; i < string.length - 1; i++) {
+    bigrams.push(string.slice(i, i+2));
+  }
+  return bigrams;
+}
+
 function diceCoefficient(str1, str2) {
   str1 = str1.toLowerCase();
   str2 = str2.toLowerCase();
@@ -832,14 +941,6 @@ function diceCoefficient(str1, str2) {
     }
   }
   return 2 * score / totalSize;
-}
-
-function bigrams(string) {
-  var bigrams = [];
-  for (var i = 0; i < string.length - 1; i++) {
-    bigrams.push(string.slice(i, i+2));
-  }
-  return bigrams;
 }
 
 function addGm(gmName) {
@@ -929,12 +1030,13 @@ function resetData() {
   currentDay = 1;
   dayTotal = 1;
   nightTime = 2000;
+  popoutTally = false;
   unvotingWord = "unvote";
   votingWord = "vote";
 }
 
 function resetScript() {
-  $("#tally-container").remove();
+  $("#fmu-main-container").remove();
   $("#qrform").after("<button id='start-tally'>Tallyho</button>");
   $("#start-tally").click(function() {
     localStorage.setItem("tallyStatus" + threadId, "1");
@@ -997,7 +1099,7 @@ function generateData() {
   if (curPage > 0 && threadId > 0) {
     localStorage.setItem("pageStatus" + threadId + "-" + curPage, postTotal + "");
     localStorage.setItem("pageData" + threadId + "-" + curPage, JSON.stringify(data));
-    $(".page-block[page='" + curPage + "']").removeClass("partial-save").removeClass("empty-save").addClass("full-save");
+    $(".page-link[page='" + curPage + "']").removeClass("partial-save").removeClass("empty-save").addClass("full-save");
   } else {
     alert("Could not save data - page is " + curPage + " and thread id is " + threadId);
   }
