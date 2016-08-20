@@ -26,5 +26,6 @@ Forum Mafia Utilities only works on the Forums of Loathing, located at http://fo
 Specifically, it'll only run on URLs that are prefixed with http://forums.kingdomofloathing.com/vb/showthread.php?.
 
 The main interface for the utility is located at the bottom of each page, under the Quick Reply box.
-To enable it for a particular thread, click the button labeled "Tallyho".
+To enable it for a particular thread, click the button labeled "Turn on Forum Mafia Utilities for this thread".
 It can be disabled again by opening the game configuration options and clicking the button labeled "Reset game".
+A more detailed guide can be found on the [wiki](https://github.com/Lrdwhyt/forum-mafia-utilities/wiki).
