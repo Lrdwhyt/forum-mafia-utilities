@@ -13,7 +13,7 @@ With Greasemonkey,  install Forum Mafia Utilities via the Releases page or by [c
 
 ### Chrome
 
-Forum Mafia Utilities is available as a Chrome extension, which can be downloaded from the Releases page or by [clicking here](https://github.com/Lrdwhyt/forum-mafia-utilities/releases/download/v0.1.0/forum-mafia-utilities.crx). After downloading, you'll need to drag the file onto Chrome's Extensions tab **while developer mode is enabled** to install it. If you install it without developer mode, Chrome will automatically deactivate it and you'll have to delete the extension before reinstalling. Developer mode can be disabled after you install the extension and the extension will continue to work normally.
+Forum Mafia Utilities is available as a Chrome extension, which can be downloaded from the Chrome Web Store [here](https://chrome.google.com/webstore/detail/forum-mafia-utilities/medflogpihpikljkkpjpeoijooblipgg?authuser=0).
 
 ## Features
 - Generates voting tallies for lynches
