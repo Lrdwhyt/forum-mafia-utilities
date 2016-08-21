@@ -9,11 +9,11 @@ It is written in JavaScript and mainly uses the jQuery library.
 ### Firefox
 
 Forum Mafia Utilities for Firefox requires the Greasemonkey add-on, which can be downloaded [here](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/).
-With Greasemonkey,  install Forum Mafia Utilities by [clicking here](https://gist.github.com/Lrdwhyt/662b8b791dcb2414113e2e9884fc9b48/raw/forum-mafia-utilities.user.js).
+With Greasemonkey,  install Forum Mafia Utilities via the Releases page or by [clicking here](https://github.com/Lrdwhyt/forum-mafia-utilities/releases/download/v0.1.0/forum-mafia-utilities.user.js).
 
 ### Chrome
 
-Support for Chrome is planned, but not available yet.
+Forum Mafia Utilities is available as a Chrome extension, which can be downloaded [from here](https://github.com/Lrdwhyt/forum-mafia-utilities/releases/download/v0.1.0/forum-mafia-utilities.crx). After downloading, you'll need to drag the file onto Chrome's Extensions tab to install it.
 
 ## Features
 - Generates voting tallies for lynches
