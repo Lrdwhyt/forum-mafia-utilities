@@ -3,7 +3,7 @@
 // @namespace   lrdwhyt
 // @description Number of added functionalities to make playing forum mafia easier. Designed for Forums of Loathing.
 // @include     http://forums.kingdomofloathing.com/vb/showthread.php?*
-// @version     0.2.1
+// @version     0.2.2
 // @grant       GM_addStyle
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js
 // ==/UserScript==
@@ -98,6 +98,8 @@ GM_addStyle(`
   background-color: var(--light-color-highlighted);
 }
 .page-link {
+  -moz-transition-duration: 0.3s;
+  -webkit-transition-duration: 0.3s;
   color: #333 !important;
   display: inline-block;
   padding: 5px;
@@ -105,7 +107,7 @@ GM_addStyle(`
   text-decoration: none;
   min-width: 18px;
 }
-.page-selected, .day-selected {
+.page-selected, .day-tabed {
   padding-bottom: 2px !important;
   border-bottom: 3px solid var(--dark-contrast-color);
 }
@@ -145,12 +147,16 @@ GM_addStyle(`
 .function-button:active {
   background-color: #546e7a;
 }
-.day-select {
+.day-tab {
+  -moz-transition-duration: 0.5s;
+  -webkit-transition-duration: 0.5s;
   cursor: pointer;
   display: inline-block;
   padding: 5px 10px;
 }
 #add-day {
+  -moz-transition-duration: 0.5s;
+  -webkit-transition-duration: 0.5s;
   background-color: var(--light-color);
   color: var(--dark-color);
   display: inline-block;
@@ -163,6 +169,8 @@ GM_addStyle(`
   cursor: pointer;
 }
 #remove-day {
+  -moz-transition-duration: 0.3s;
+  -webkit-transition-duration: 0.3s;
   background-color: var(--dark-contrast-color);
   color: var(--light-color);
   display: inline-block;
@@ -286,6 +294,25 @@ GM_addStyle(`
 }
 .dead-player .player-state {
   color: #999;
+}
+.death-info {
+  display: none;
+}
+.dead-player .death-info {
+  display: inline-block;
+}
+.death-info .death-phase {
+  background-color: var(--dark-contrast-color);
+  color: #fff;
+  margin-right: 0 !important;
+}
+
+.death-info .death-phase:hover {
+  background-color: var(--dark-contrast-color-highlighted);
+}
+
+.death-info .death-time {
+  margin-left: 0 !important;
 }
 .dead-player .player-name {
   text-decoration: line-through;
@@ -632,7 +659,10 @@ function createInterface() {
     for (var i = 0; i < playerNameList.length; i++) {
       var playerEle = addPlayerGui(playerNameList[i]);
       if (playerStatusList.hasOwnProperty(playerNameList[i])) {
-        $(".player-block[name='" + playerNameList[i] + "'] .player-state").text(getPlayerState(playerStatusList[playerNameList[i]]));
+        var playerStatus = playerStatusList[playerNameList[i]];
+        $(".player-block[name='" + playerNameList[i] + "'] .player-state").text(getLifeStatus(playerStatus));
+        $(".player-block[name='" + playerNameList[i] + "'] .death-phase").text(getPhaseName(playerStatus));
+        $(".player-block[name='" + playerNameList[i] + "'] .death-time").text(getDeathTime(playerStatus));
         if (playerStatusList[playerNameList[i]] == -1) {
           playerEle.addClass("alive-player");
         } else {
@@ -731,7 +761,7 @@ function createInterface() {
   $("#remove-day").click(function() {
     changeDayCount(-1);
   });
-  $("#day-tab-container").on("click", ".day-select", function() {
+  $("#day-tab-container").on("click", ".day-tab", function() {
     switchDay($(this).attr("name"));
   });
   $("#start-post").click(function() {
@@ -839,21 +869,49 @@ function createInterface() {
     }
   });
   $("#player-list").on("click", ".player-state", function() {
-    var newState = prompt("Enter the night/day of death. Leave blank to mark player as alive.");
-    if (newState != null) {
-      if (newState == "") {
-        playerStatusList[$(this).parent().attr("name")] = -1;
-        localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
-        $(this).closest(".player-block").removeClass("dead-player").addClass("alive-player");
-        $(this).text(getPlayerState(-1));
+    if ($(this).text() == "alive") {
+      if ($(this).closest(".player-block").find(".death-phase").text() == "night") {
+        playerStatusList[$(this).parent().attr("name")] = currentDay * 2;
       } else {
-        newState = parseInt(newState);
-        if (newState > 0) {
-          playerStatusList[$(this).parent().attr("name")] = newState;
-          localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
-          $(this).closest(".player-block").removeClass("alive-player").addClass("dead-player");
-          $(this).text(getPlayerState(newState));
+        playerStatusList[$(this).parent().attr("name")] = currentDay * 2 - 1;
+      }
+      localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
+      $(this).closest(".player-block").removeClass("alive-player").addClass("dead-player");
+      $(this).text(getLifeStatus(currentDay));
+      $(this).closest(".player-block").find(".death-time").text(currentDay);
+      
+    } else {
+      playerStatusList[$(this).parent().attr("name")] = -1;
+      localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
+      $(this).closest(".player-block").removeClass("dead-player").addClass("alive-player");
+      $(this).text(getLifeStatus(-1));
+    }
+  });
+  $("#player-list").on("click", ".death-phase", function() {
+    if ($(this).text() == "night") {
+      $(this).text(getPhaseName(playerStatusList[$(this).closest(".player-block").attr("name")]));
+      playerStatusList[$(this).closest(".player-block").attr("name")] -= 1;
+      localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
+      $(this).text("day");
+    } else {
+      $(this).text(getPhaseName(playerStatusList[$(this).closest(".player-block").attr("name")]));
+      playerStatusList[$(this).closest(".player-block").attr("name")] += 1;
+      localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
+      $(this).text("night");
+    }
+  });
+  $("#player-list").on("click", ".death-time", function() {
+    var newState = prompt("Enter the night of death.");
+    if (newState) {
+      newState = parseInt(newState);
+      if (newState > 0) {
+        if ($(this).closest(".death-info").find(".death-phase").text() == "night") {
+          playerStatusList[$(this).closest(".player-block").attr("name")] = newState * 2;
+        } else {
+          playerStatusList[$(this).closest(".player-block").attr("name")] = newState * 2 - 1;
         }
+        localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
+        $(this).text(newState);
       }
     }
   });
@@ -910,19 +968,31 @@ function editPlayerName(oldName, newName) {
   }
 }
 
-function getPlayerState(state) {
+function getLifeStatus(state) {
   if (state == -1) {
     return "alive";
   } else {
-    return "died day " + state;
+    return "dead";
   }
+}
+
+function getPhaseName(state) {
+  if (state % 2 == 1) {
+    return "day";
+  } else {
+    return "night";
+  }
+}
+
+function getDeathTime(state) {
+  return Math.ceil(state / 2);
 }
 
 function switchDay(day) {
   currentDay = day;
   localStorage.setItem("selectedDay" + threadId, day);
-  $(".day-select").removeClass("day-selected");
-  $(".day-select[name='" + day + "']").addClass("day-selected");
+  $(".day-tab").removeClass("day-tabed");
+  $(".day-tab[name='" + day + "']").addClass("day-tabed");
   if (dayDataList[day]) {
     $(".boundary-option").removeClass("boundary-option-selected");
     if (dayDataList[day]["startPost"]) {
@@ -959,7 +1029,7 @@ function switchDay(day) {
 
 function addDayTabGui(day) {
   $("<div />", {
-    class: "day-select",
+    class: "day-tab",
     name: day,
     text: "Day " + day
   }).appendTo("#day-tab-container");
@@ -988,14 +1058,14 @@ function changeDayCount(change) {
       if (currentDay > numberDaysTotal) {
         switchDay(numberDaysTotal);
       }
-      $("#day-tab-container .day-select[name='" + (numberDaysTotal + 1) + "']").remove();
+      $("#day-tab-container .day-tab[name='" + (numberDaysTotal + 1) + "']").remove();
     }
   }
   localStorage.setItem("dayCount" + threadId, numberDaysTotal + "");
 }
 
 function colourDayTab(day) {
-  var dayTab = $(".day-select[name='" + day + "']");
+  var dayTab = $(".day-tab[name='" + day + "']");
   dayTab.removeClass("partial-data-day").removeClass("full-data-day").removeClass("empty-data-day");
   if (dayDataList[day]) {
     if (dayDataList[day]["startSelected"] && dayDataList[day]["endSelected"]) {
@@ -1107,7 +1177,7 @@ function getTallyForRange(start, end) {
     }
   });
   for (var i in playerNameList) {
-    if (playerStatusList[playerNameList[i]] != -1 && playerStatusList[playerNameList[i]] < currentDay) {
+    if (playerStatusList[playerNameList[i]] != -1 && playerStatusList[playerNameList[i]] < currentDay * 2) {
       continue;
     }
     if (!playerVotes.hasOwnProperty(playerNameList[i])) {
@@ -1351,6 +1421,17 @@ function addPlayerGui(playerName) {
       class: "player-state input-button",
       text: "alive"
     }))
+    .append($("<div />", {
+      class: "death-info"
+    })
+    .append($("<button />", {
+      class: "death-phase input-button",
+      text: "night"
+    }))
+    .append($("<button />", {
+      class: "death-time input-button",
+      text: "1"
+    })))
     .append($("<span />", {
       class: "sub-list"
     }))
@@ -1358,7 +1439,7 @@ function addPlayerGui(playerName) {
       class: "player-controls"
     })
     .append($("<button />", {
-      class: "add-sub input-button",
+      class: "add-sub function-button",
       text: "+Alias"
     }))
     .append($("<button />", {

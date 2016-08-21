@@ -87,6 +87,8 @@
   background-color: var(--light-color-highlighted);
 }
 .page-link {
+  -moz-transition-duration: 0.3s;
+  -webkit-transition-duration: 0.3s;
   color: #333 !important;
   display: inline-block;
   padding: 5px;
@@ -94,7 +96,7 @@
   text-decoration: none;
   min-width: 18px;
 }
-.page-selected, .day-selected {
+.page-selected, .day-tabed {
   padding-bottom: 2px !important;
   border-bottom: 3px solid var(--dark-contrast-color);
 }
@@ -134,12 +136,16 @@
 .function-button:active {
   background-color: #546e7a;
 }
-.day-select {
+.day-tab {
+  -moz-transition-duration: 0.5s;
+  -webkit-transition-duration: 0.5s;
   cursor: pointer;
   display: inline-block;
   padding: 5px 10px;
 }
 #add-day {
+  -moz-transition-duration: 0.5s;
+  -webkit-transition-duration: 0.5s;
   background-color: var(--light-color);
   color: var(--dark-color);
   display: inline-block;
@@ -152,6 +158,8 @@
   cursor: pointer;
 }
 #remove-day {
+  -moz-transition-duration: 0.3s;
+  -webkit-transition-duration: 0.3s;
   background-color: var(--dark-contrast-color);
   color: var(--light-color);
   display: inline-block;
@@ -275,6 +283,25 @@
 }
 .dead-player .player-state {
   color: #999;
+}
+.death-info {
+  display: none;
+}
+.dead-player .death-info {
+  display: inline-block;
+}
+.death-info .death-phase {
+  background-color: var(--dark-contrast-color);
+  color: #fff;
+  margin-right: 0 !important;
+}
+
+.death-info .death-phase:hover {
+  background-color: var(--dark-contrast-color-highlighted);
+}
+
+.death-info .death-time {
+  margin-left: 0 !important;
 }
 .dead-player .player-name {
   text-decoration: line-through;
