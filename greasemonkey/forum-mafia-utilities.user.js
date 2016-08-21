@@ -3,7 +3,7 @@
 // @namespace   lrdwhyt
 // @description Number of added functionalities to make playing forum mafia easier. Designed for Forums of Loathing.
 // @include     http://forums.kingdomofloathing.com/vb/showthread.php?*
-// @version     0.1.0
+// @version     0.2.0
 // @grant       GM_addStyle
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js
 // ==/UserScript==
@@ -37,6 +37,20 @@ GM_addStyle(`
 }
 #memory-usage {
   margin: 10px 0;
+}
+#help-link {
+  -moz-transition-duration: 0.3s;
+  -webkit-transition-duration: 0.3s;
+  background-color: #607d8b;
+  box-shadow: 0 0 1px #333;
+  color: #fff;
+  display: inline-block;
+  margin: 5px;
+  padding: 9px;
+  text-decoration: none;
+}
+#help-link:hover {
+  background-color: #455a64;
 }
 #fmu-main-container {
   margin-bottom: 10px;
@@ -113,11 +127,13 @@ GM_addStyle(`
 }
 .input-button:hover {
   -moz-transition-duration: 0.4s;
+  -webkit-transition-duration: 0.4s;
   background-color: #f5f5f5;
   border-color: #f5f5f5;
 }
 .function-button {
   -moz-transition-duration: 0.3s;
+  -webkit-transition-duration: 0.3s;
   background-color: #607d8b;
   border: none;
   box-shadow: 0 0 1px #333;
@@ -349,6 +365,11 @@ $(document).ready(function () {
         class: "function-button",
         id: "edit-settings",
         text: "Settings"
+      }))
+      .append($("<button />", {
+        class: "function-button",
+        onclick: "window.open('https://github.com/Lrdwhyt/forum-mafia-utilities/wiki', '_blank')",
+        text: "Help"
       })))
     .append($("<div />", {
       id: "settings-display"
@@ -631,6 +652,9 @@ function createInterface() {
     $("#game-configuration").show();
     $("#toggle-game-configuration").text("Hide game configuration");
   }
+  $("#tally-body").on("click",".unrecognised-voter", function() {
+    addPlayer($(this).attr("name"));
+  })
   $("#update-tally").click(function() {
     if (playerNameList.length > 0) {
       generateNicknames();
@@ -804,7 +828,7 @@ function createInterface() {
   });
   $("#player-list").on("click", ".player-name", function() {
     var oldName = $(this).text();
-    var newName = prompt("Enter new player name", oldName);
+    var newName = prompt("Enter new player name.", oldName);
     if (newName) {
       editPlayerName(oldName, newName);
       $(this).text(newName);

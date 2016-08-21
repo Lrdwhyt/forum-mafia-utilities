@@ -9,12 +9,44 @@
   --dark-contrast-color-highlighted: #455a64;
   --med-contrast-color: #e91e63;
 }
+#script-manager {
+  background-color: var(--light-color);
+  margin-top: 10px;
+}
+#script-title {
+  background-color: var(--dark-color);
+  color: #fff;
+  display: inline-block;
+  margin-right: 5px;
+  padding: 20px 10px;
+}
+#settings-display {
+  display: none;
+  padding: 10px;
+}
+#memory-usage {
+  margin: 10px 0;
+}
+#help-link {
+  -moz-transition-duration: 0.3s;
+  -webkit-transition-duration: 0.3s;
+  background-color: #607d8b;
+  box-shadow: 0 0 1px #333;
+  color: #fff;
+  display: inline-block;
+  margin: 5px;
+  padding: 9px;
+  text-decoration: none;
+}
+#help-link:hover {
+  background-color: #455a64;
+}
 #fmu-main-container {
   margin-bottom: 10px;
   padding-top: 10px;
 }
 #page-container {
-  margin: 10px 5px;
+  margin: 10px 0;
 }
 .page-link.full-save {
   background-color: var(--dark-color);
@@ -72,20 +104,40 @@
   display: inline-block;
   padding: 5px 10px;
 }
-#fmu-main-container button, #start-tally {
+#script-manager button, #fmu-main-container button, #settings-display button {
   display: inline-block;
-  height: 27px;
+  font-family: Verdana, sans-serif;
   margin: 5px;
+  padding: 9px;
 }
-#day-controls {
-  margin: 0 5px;
+.input-button {
+  background-color: #fff;
+  border: none;
+}
+.input-button:hover {
+  -moz-transition-duration: 0.4s;
+  -webkit-transition-duration: 0.4s;
+  background-color: #f5f5f5;
+  border-color: #f5f5f5;
+}
+.function-button {
+  -moz-transition-duration: 0.3s;
+  -webkit-transition-duration: 0.3s;
+  background-color: #607d8b;
+  border: none;
+  box-shadow: 0 0 1px #333;
+  color: #fff;
+}
+.function-button:hover {
+  background-color: #455a64;
+}
+.function-button:active {
+  background-color: #546e7a;
 }
 .day-select {
+  cursor: pointer;
   display: inline-block;
   padding: 5px 10px;
-}
-.day-select:hover {
-  cursor: pointer;
 }
 #add-day {
   background-color: var(--light-color);
@@ -111,24 +163,32 @@
   background-color: var(--dark-contrast-color-highlighted);
   cursor: pointer;
 }
+#toggle-game-configuration-container {
+  background-color: var(--light-color);
+  padding: 10px;
+}
 #day-area {
   background-color: var(--light-color);
-  margin: 0 5px;
   padding: 10px;
 }
 #tally-body {
   padding: 10px 0;
 }
-#tally-container.floating {
+#tally-body, #tally-controls {
   background-color: var(--light-color);
+}
+#tally-container.floating {
   left: 0;
   bottom: 0;
-  opacity: 0.1;
+  opacity: 0.9;
   padding: 0 10px;
   position: fixed;
 }
-#tally-container.floating:hover {
-  opacity: 0.9;
+#tally-container.floating #tally-body {
+  opacity: 0.1;
+}
+#tally-container.floating:hover #tally-body {
+  opacity: 1;
 }
 .voter-name-list {
   margin: 5px;
@@ -195,18 +255,17 @@
 #game-configuration {
   background-color: var(--light-color);
   display: none;
-  margin: 5px;
   padding: 10px;
-}
-#start-post, #start-time, #end-post, #end-time, .gm-name, #nighttime-set {
-  background-color: #fff;
-  border: none;
 }
 .boundary-option {
   border-bottom: 3px solid #fff;
+  padding-bottom: 6px !important;
 }
-.boundary-option-selected {
-  border-bottom: 3px solid var(--dark-contrast-color) !important;
+.boundary-option.boundary-option-selected {
+  border-bottom: 3px solid var(--dark-contrast-color);
+}
+#toggle-game-configuration {
+  margin: 5px 0 !important;
 }
 #paste-wrapper {
   display: none;
@@ -217,33 +276,29 @@
 .dead-player .player-state {
   color: #999;
 }
-.dead-player .edit-player{
+.dead-player .player-name {
   text-decoration: line-through;
 }
-.player-name button {
-  background-color: white;
-  border: none;
+.player-block button {
+  margin: 1px 5px !important;
+}
+.player-block button {
   margin: 2px 5px !important;
-  padding: 2px 5px;
+  padding: 5px 7px !important;
 }
-.player-number {
-  background-color: #d09;
-  color: red;
-  display: inline-block;
-}
-.edit-player {
+.player-name {
   cursor: text;
   font-weight: bold;
+}
+.input-button.edit-button {
+  cursor: text;
 }
 .player-controls {
   display: none;
 }
-.player-controls button:hover {
-  background-color: #f5f5f5;
-}
 .remove-player {
-  width: 27px;
+  width: 29px;
 }
-li.player-name:hover .player-controls {
+li.player-block:hover .player-controls {
   display: inline;
 }
