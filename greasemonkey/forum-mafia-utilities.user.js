@@ -8,331 +8,347 @@
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js
 // ==/UserScript==
 
-GM_addStyle(":root {\
-  --dark-color: #e91e63;\
-  --dark-color-highlighted: #d81b60;\
-  --med-color: #e1bee7;\
-  --med-color-highlighted: #ce93d8;\
-  --light-color: #eceff1;\
-  --light-color-highlighted: #cfd8dc;\
-  --dark-contrast-color: #546e7a;\
-  --dark-contrast-color-highlighted: #455a64;\
-  --med-contrast-color: #e91e63;\
-}\
-#fmu-main-container {\
-  margin-bottom: 10px;\
-  padding-top: 10px;\
-}\
-#page-container {\
-  margin: 10px 5px;\
-}\
-.page-link.full-save {\
-  background-color: var(--dark-color);\
-  color: #fff !important;\
-}\
-.full-save:hover {\
-  background-color: var(--dark-color-highlighted);\
-}\
-.partial-save {\
-  background-color: var(--med-color);\
-}\
-.partial-save:hover {\
-  background-color: var(--med-color-highlighted);\
-}\
-.empty-save {\
-  background-color: var(--light-color);\
-}\
-.empty-save:hover {\
-  background-color: var(--light-color-highlighted);\
-}\
-.full-data-day {\
-  background-color: var(--dark-color);\
-  color: #fff !important;\
-}\
-.full-data-day:hover {\
-  background-color: var(--dark-color-highlighted);\
-}\
-.partial-data-day {\
-  background-color: var(--med-color);\
-}\
-.partial-data-day:hover {\
-  background-color: var(--med-color-highlighted);\
-}\
-.empty-data-day {\
-  background-color: var(--light-color);\
-}\
-.empty-data-day:hover {\
-  background-color: var(--light-color-highlighted);\
-}\
-.page-link {\
-  color: #333 !important;\
-  display: inline-block;\
-  padding: 5px;\
-  text-align: center;\
-  text-decoration: none;\
-  min-width: 18px;\
-}\
-.page-selected, .day-selected {\
-  padding-bottom: 2px !important;\
-  border-bottom: 3px solid var(--dark-contrast-color);\
-}\
-#page-label {\
-  background-color: var(--dark-contrast-color);\
-  color: var(--dark-color);\
-  display: inline-block;\
-  padding: 5px 10px;\
-}\
-#fmu-main-container button, #start-tally {\
-  display: inline-block;\
-  height: 27px;\
-  margin: 5px;\
-}\
-#day-controls {\
-  margin: 0 5px;\
-}\
-.day-select {\
-  display: inline-block;\
-  padding: 5px 10px;\
-}\
-.day-select:hover {\
-  cursor: pointer;\
-}\
-#add-day {\
-  background-color: var(--light-color);\
-  color: var(--dark-color);\
-  display: inline-block;\
-  padding: 5px;\
-  text-align: center;\
-  width: 17px;\
-}\
-#add-day:hover {\
-  background-color: var(--light-color-highlighted);\
-  cursor: pointer;\
-}\
-#remove-day {\
-  background-color: var(--dark-contrast-color);\
-  color: var(--light-color);\
-  display: inline-block;\
-  padding: 5px;\
-  text-align: center;\
-  width: 17px;\
-}\
-#remove-day:hover {\
-  background-color: var(--dark-contrast-color-highlighted);\
-  cursor: pointer;\
-}\
-#day-area {\
-  background-color: var(--light-color);\
-  margin: 0 5px;\
-  padding: 10px;\
-}\
-#tally-body {\
-  padding: 10px 0;\
-}\
-#tally-container.floating {\
-  background-color: var(--light-color);\
-  left: 0;\
-  bottom: 0;\
-  opacity: 0.1;\
-  padding: 0 10px;\
-  position: fixed;\
-}\
-#tally-container.floating:hover {\
-  opacity: 0.9;\
-}\
-.voter-name-list {\
-  margin: 5px;\
-}\
-.voter-wrap {\
-  display: inline-block;\
-  margin: 2px;\
-  position: relative;\
-}\
-.voter-name {\
-  background-color: white;\
-  display: inline-block;\
-  padding: 5px 8px;\
-}\
-.unrecognised-voter {\
-  background-color: #f00;\
-  color: #fff;\
-}\
-.vote-link {\
-  background-color: var(--dark-contrast-color);\
-  color: #fff !important;\
-  display: none;\
-  font-size: 7pt;\
-  opacity: 0.8;\
-  padding: 3px;\
-  position: absolute;\
-  right: 0;\
-  text-decoration: none;\
-}\
-.vote-link:hover {\
-  color: #333;\
-}\
-.voter-wrap:hover .vote-link {\
-  display: inline-block;\
-}\
-.voted-name {\
-  background-color: var(--dark-contrast-color);\
-  color: #fff;\
-  display: inline-block;\
-  font-weight: bold;\
-  margin-top: 5px;\
-  margin-bottom: 5px;\
-  padding: 8px;\
-}\
-.voted-name.no-vote {\
-  background-color: var(--light-color-highlighted);\
-  color: #333;\
-}\
-.vote-count {\
-  background-color: #e91e63;\
-  color: #fff;\
-  display: inline-block;\
-  font-weight: bold;\
-  padding: 8px;\
-}\
-.vote-count.no-vote {\
-  background-color: var(--med-color);\
-  color: #333;\
-}\
-#data-container {\
-  height: 0;\
-  opacity: 0;\
-}\
-#game-configuration {\
-  background-color: var(--light-color);\
-  display: none;\
-  margin: 5px;\
-  padding: 10px;\
-}\
-#start-post, #start-time, #end-post, #end-time, .gm-name, #nighttime-set {\
-  background-color: #fff;\
-  border: none;\
-}\
-.boundary-option {\
-  border-bottom: 3px solid #fff;\
-}\
-.boundary-option-selected {\
-  border-bottom: 3px solid var(--dark-contrast-color) !important;\
-}\
-#paste-wrapper {\
-  display: none;\
-}\
-.alive-player .player-state {\
-  color: var(--dark-color);\
-}\
-.dead-player .player-state {\
-  color: #999;\
-}\
-.dead-player .edit-player{\
-  text-decoration: line-through;\
-}\
-.player-name button {\
-  background-color: white;\
-  border: none;\
-  margin: 2px 5px !important;\
-  padding: 2px 5px;\
-}\
-.player-number {\
-  background-color: #d09;\
-  color: red;\
-  display: inline-block;\
-}\
-.edit-player {\
-  cursor: text;\
-  font-weight: bold;\
-}\
-.player-controls {\
-  display: none;\
-}\
-.player-controls button:hover {\
-  background-color: #f5f5f5;\
-}\
-.remove-player {\
-  width: 27px;\
-}\
-li.player-name:hover .player-controls {\
-  display: inline;\
-}\
-");
+GM_addStyle(`
+:root {
+  --dark-color: #e91e63;
+  --dark-color-highlighted: #d81b60;
+  --med-color: #e1bee7;
+  --med-color-highlighted: #ce93d8;
+  --light-color: #eceff1;
+  --light-color-highlighted: #cfd8dc;
+  --dark-contrast-color: #546e7a;
+  --dark-contrast-color-highlighted: #455a64;
+  --med-contrast-color: #e91e63;
+}
+#fmu-main-container {
+  margin-bottom: 10px;
+  padding-top: 10px;
+}
+#page-container {
+  margin: 10px 5px;
+}
+.page-link.full-save {
+  background-color: var(--dark-color);
+  color: #fff !important;
+}
+.full-save:hover {
+  background-color: var(--dark-color-highlighted);
+}
+.partial-save {
+  background-color: var(--med-color);
+}
+.partial-save:hover {
+  background-color: var(--med-color-highlighted);
+}
+.empty-save {
+  background-color: var(--light-color);
+}
+.empty-save:hover {
+  background-color: var(--light-color-highlighted);
+}
+.full-data-day {
+  background-color: var(--dark-color);
+  color: #fff !important;
+}
+.full-data-day:hover {
+  background-color: var(--dark-color-highlighted);
+}
+.partial-data-day {
+  background-color: var(--med-color);
+}
+.partial-data-day:hover {
+  background-color: var(--med-color-highlighted);
+}
+.empty-data-day {
+  background-color: var(--light-color);
+}
+.empty-data-day:hover {
+  background-color: var(--light-color-highlighted);
+}
+.page-link {
+  color: #333 !important;
+  display: inline-block;
+  padding: 5px;
+  text-align: center;
+  text-decoration: none;
+  min-width: 18px;
+}
+.page-selected, .day-selected {
+  padding-bottom: 2px !important;
+  border-bottom: 3px solid var(--dark-contrast-color);
+}
+#page-label {
+  background-color: var(--dark-contrast-color);
+  color: var(--dark-color);
+  display: inline-block;
+  padding: 5px 10px;
+}
+#fmu-main-container button, #enable-script {
+  display: inline-block;
+  height: 27px;
+  margin: 5px;
+}
+#day-controls {
+  margin: 0 5px;
+}
+.day-select {
+  cursor: pointer;
+  display: inline-block;
+  padding: 5px 10px;
+}
+#add-day {
+  background-color: var(--light-color);
+  color: var(--dark-color);
+  display: inline-block;
+  padding: 5px;
+  text-align: center;
+  width: 17px;
+}
+#add-day:hover {
+  background-color: var(--light-color-highlighted);
+  cursor: pointer;
+}
+#remove-day {
+  background-color: var(--dark-contrast-color);
+  color: var(--light-color);
+  display: inline-block;
+  padding: 5px;
+  text-align: center;
+  width: 17px;
+}
+#remove-day:hover {
+  background-color: var(--dark-contrast-color-highlighted);
+  cursor: pointer;
+}
+#day-area {
+  background-color: var(--light-color);
+  margin: 0 5px;
+  padding: 10px;
+}
+#tally-body {
+  padding: 10px 0;
+}
+#tally-body, #tally-controls {
+  background-color: var(--light-color);
+}
+#tally-container.floating {
+  left: 0;
+  bottom: 0;
+  opacity: 0.9;
+  padding: 0 10px;
+  position: fixed;
+}
+#tally-container.floating #tally-body {
+  opacity: 0.1;
+}
+#tally-container.floating:hover #tally-body {
+  opacity: 1;
+}
+.voter-name-list {
+  margin: 5px;
+}
+.voter-wrap {
+  display: inline-block;
+  margin: 2px;
+  position: relative;
+}
+.voter-name {
+  background-color: white;
+  display: inline-block;
+  padding: 5px 8px;
+}
+.unrecognised-voter {
+  background-color: #f00;
+  color: #fff;
+}
+.vote-link {
+  background-color: var(--dark-contrast-color);
+  color: #fff !important;
+  display: none;
+  font-size: 7pt;
+  opacity: 0.8;
+  padding: 3px;
+  position: absolute;
+  right: 0;
+  text-decoration: none;
+}
+.vote-link:hover {
+  color: #333;
+}
+.voter-wrap:hover .vote-link {
+  display: inline-block;
+}
+.voted-name {
+  background-color: var(--dark-contrast-color);
+  color: #fff;
+  display: inline-block;
+  font-weight: bold;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  padding: 8px;
+}
+.voted-name.no-vote {
+  background-color: var(--light-color-highlighted);
+  color: #333;
+}
+.vote-count {
+  background-color: #e91e63;
+  color: #fff;
+  display: inline-block;
+  font-weight: bold;
+  padding: 8px;
+}
+.vote-count.no-vote {
+  background-color: var(--med-color);
+  color: #333;
+}
+#data-container {
+  height: 0;
+  opacity: 0;
+}
+#game-configuration {
+  background-color: var(--light-color);
+  display: none;
+  margin: 5px;
+  padding: 10px;
+}
+#start-post, #start-time, #end-post, #end-time, .gm-name, #nightfall-time {
+  background-color: #fff;
+  border: none;
+}
+.boundary-option {
+  border-bottom: 3px solid #fff;
+}
+.boundary-option-selected {
+  border-bottom: 3px solid var(--dark-contrast-color) !important;
+}
+#paste-wrapper {
+  display: none;
+}
+.alive-player .player-state {
+  color: var(--dark-color);
+}
+.dead-player .player-state {
+  color: #999;
+}
+.dead-player .player-name {
+  text-decoration: line-through;
+}
+.player-block button {
+  margin: 1px 5px !important;
+}
+.player-block button.input-button {
+  background-color: white;
+  border: none;
+  margin: 2px 5px !important;
+  padding: 2px 5px;
+}
+.player-number {
+  background-color: #d09;
+  color: red;
+  display: inline-block;
+}
+.player-name {
+  cursor: text;
+  font-weight: bold;
+}
+.input-button.edit-button {
+  cursor: text;
+}
+.player-controls {
+  display: none;
+}
+button.input-button:hover {
+  background-color: #f5f5f5 !important;
+}
+.remove-player {
+  width: 27px;
+}
+li.player-block:hover .player-controls {
+  display: inline;
+}`);
 
-pageSize = 60;
-ignoredPlayers = ["TallyBot"];
-nightKeywords = ["lynch", "kill", "day", "night", "someone", "die"];
-includeGm = false;
-unvotingWord = "unvote";
-votingWord = "vote";
-gmNames = [];
-playerNames = [];
-alivePlayerNames = [];
-savedTallies = {};
-subNames = {};
-nicknames = {};
-recognisedVotes = {};
-playerStates = {};
-curPage = 0;
+/*Represents script mode for the current thread
+  0 - Off
+  1 - On, game configuration is hidden
+  2 - On, game configuration is shown*/
+threadScriptMode = 0;
+numberPostsPerPage = 60; //Maximum number of posts per page - Forum default is 60
+ignoredPlayerList = ["TallyBot"]; //Usernames to ignore when retrieving data
+nightKeywords = ["lynch", "kill", "day", "night", "someone", "die"]; //List of words associated with night posts (unimplemented)
+includeGm = false; //Whether to include the GM when retrieving data
+unvoteKeyword = "unvote"; //String used to signify unvote
+voteKeyword = "vote"; //String used to signify vote
+gmNameList = [];
+playerNameList = [];
+subNameList = {};
+playerNicknameList = {};
+playerStatusList = {};
+savedTallyList = {};
+recognisedVoteList = {};
+unrecognisedVoterList = [];
 threadId = 0;
-postTotal = 0;
-tallyStatus = 0;
-dayTotal = 1;
-currentDay = 1;
-nightTime = 2000;
-dayOptions = {};
-popoutTally = false;
-
-unrecognisedVoters = [];
+currentPage = 0;
+pageTotal = 0;
+numberPostsOnPage = 0;
+dayDataList = {};
+numberDaysTotal = 1;
+currentDay = 1; //The day that is selected by the user
+nightfallTime = 2000; //Default time for nightfall
+isTallyPopout = false;
 
 $(document).ready(function () {
   threadId = getThreadId();
-  tallyStatus = parseInt(localStorage.getItem("tallyStatus" + threadId));
-  if (tallyStatus) {
+  threadScriptMode = parseInt(localStorage.getItem("threadScriptMode" + threadId));
+  if (threadScriptMode) {
+    getCurrentPageNumbers();
     createInterface();
   } else {
     resetScript();
   }
 });
 
-function createInterface() {
-  pageString = $(".pagenav td.vbmenu_control:first-child").first().text();
-  pageArray = pageString.split(" ");
-  curPage = parseInt(pageArray[1]);
+function getCurrentPageNumbers() {
+  var pageString = $(".pagenav td.vbmenu_control:first-child").first().text();
+  var pageArray = pageString.split(" ");
+  currentPage = parseInt(pageArray[1]);
   pageTotal = parseInt(pageArray[3]);
-  postTotal = 1 + parseInt($(".thead > [id^=postcount]").last().attr("name")) - parseInt($(".thead > [id^=postcount]").first().attr("name"));
+  numberPostsOnPage = 1 + parseInt($(".thead > [id^=postcount]").last().attr("name")) - parseInt($(".thead > [id^=postcount]").first().attr("name"));
+}
+
+function createInterface() {
   if (localStorage.getItem("dayCount" + threadId)) {
-    dayTotal = parseInt(localStorage.getItem("dayCount" + threadId));
+    numberDaysTotal = parseInt(localStorage.getItem("dayCount" + threadId));
   }
-  if (localStorage.getItem("gmNames" + threadId)) {
-    gmNames = JSON.parse(localStorage.getItem("gmNames" + threadId));
-  } else if (curPage == 1) {
-    gmNames.push($(".bigusername").first().text());
-    localStorage.setItem("gmNames" + threadId, JSON.stringify(gmNames));
+  if (localStorage.getItem("gmNameList" + threadId)) {
+    gmNameList = JSON.parse(localStorage.getItem("gmNameList" + threadId));
+  } else if (currentPage == 1) {
+    gmNameList.push($(".bigusername").first().text());
+    localStorage.setItem("gmNameList" + threadId, JSON.stringify(gmNameList));
   }
-  if (localStorage.getItem("playerNames" + threadId)) {
-    playerNames = JSON.parse(localStorage.getItem("playerNames" + threadId));
+  if (localStorage.getItem("playerNameList" + threadId)) {
+    playerNameList = JSON.parse(localStorage.getItem("playerNameList" + threadId));
   }
-  if (localStorage.getItem("subNames" + threadId)) {
-    subNames = JSON.parse(localStorage.getItem("subNames" + threadId));
+  if (localStorage.getItem("subNameList" + threadId)) {
+    subNameList = JSON.parse(localStorage.getItem("subNameList" + threadId));
   }
-  if (localStorage.getItem("nightTime" + threadId)) {
-    nightTime = parseInt(localStorage.getItem("nightTime" + threadId));
+  if (localStorage.getItem("nightfallTime" + threadId)) {
+    nightfallTime = parseInt(localStorage.getItem("nightfallTime" + threadId));
   }
-  if (localStorage.getItem("dayView" + threadId)) {
-    currentDay = parseInt(localStorage.getItem("dayView" + threadId));
+  if (localStorage.getItem("selectedDay" + threadId)) {
+    currentDay = parseInt(localStorage.getItem("selectedDay" + threadId));
   }
-  if (localStorage.getItem("dayOptions" + threadId)) {
-    dayOptions = JSON.parse(localStorage.getItem("dayOptions" + threadId));
+  if (localStorage.getItem("dayDataList" + threadId)) {
+    dayDataList = JSON.parse(localStorage.getItem("dayDataList" + threadId));
   }
-  if (localStorage.getItem("savedTallies" + threadId)) {
-    savedTallies = JSON.parse(localStorage.getItem("savedTallies" + threadId));
+  if (localStorage.getItem("savedTallyList" + threadId)) {
+    savedTallyList = JSON.parse(localStorage.getItem("savedTallyList" + threadId));
   }
-  if (localStorage.getItem("playerStates" + threadId)) {
-    playerStates = JSON.parse(localStorage.getItem("playerStates" + threadId));
+  if (localStorage.getItem("playerStatusList" + threadId)) {
+    playerStatusList = JSON.parse(localStorage.getItem("playerStatusList" + threadId));
   }
-  if (localStorage.getItem("unrecognisedVoters" + threadId)) {
-    unrecognisedVoters = JSON.parse(localStorage.getItem("unrecognisedVoters" + threadId));
+  if (localStorage.getItem("unrecognisedVoterList" + threadId)) {
+    unrecognisedVoterList = JSON.parse(localStorage.getItem("unrecognisedVoterList" + threadId));
   }
   $("#qrform").after("<div id='fmu-main-container'></div>");
   $("<div />", {
@@ -371,18 +387,22 @@ function createInterface() {
       id: "tally-controls"
     })
     .append($("<button />", {
+      class: "function-button",
       id: "update-tally",
       text: "Update tally"
     }))
     .append($("<button />", {
+      class: "function-button",
       id: "copy-tally",
       text: "Copy BBcode"
     }))
     .append($("<button />", {
+      class: "function-button",
       id: "copy-vote-log",
       text: "Copy vote log"
     }))
     .append($("<button />", {
+      class: "function-button",
       id: "toggle-tally-display",
       text: "Pop out"
     }))))
@@ -392,11 +412,11 @@ function createInterface() {
     }))
     .append($("<button />", {
       id: "start-post",
-      class: "boundary-option"
+      class: "boundary-option input-button edit-button"
     }))
     .append($("<button />", {
       id: "start-time",
-      class: "boundary-option"
+      class: "boundary-option input-button edit-button"
     }))
     .append($("<br />"))
     .append($("<span />", {
@@ -404,11 +424,11 @@ function createInterface() {
     }))
     .append($("<button />", {
       id: "end-post",
-      class: "boundary-option"
+      class: "boundary-option input-button edit-button"
     }))
     .append($("<button />", {
       id: "end-time",
-      class: "boundary-option"
+      class: "boundary-option input-button edit-button"
     }))
     .appendTo("#fmu-main-container");
   $("<button />", {
@@ -433,8 +453,9 @@ function createInterface() {
       text: "Night time"
     }))
     .append($("<button />", {
-      id: "nighttime-set",
-      text: nightTime
+      class: "input-button edit-button",
+      id: "nightfall-time",
+      text: nightfallTime
     }))
     .append($("<br />"))
     .append($("<span />", {
@@ -487,10 +508,10 @@ function createInterface() {
       page: pg,
       text: pg
     }).appendTo($("#page-controls"));
-    if (pg == curPage) {
+    if (pg == currentPage) {
       newBlock.addClass("page-selected");
     }
-    if (pageStatus == pageSize || (curPage == pageTotal && pageStatus == postTotal)) {
+    if (pageStatus == numberPostsPerPage || (currentPage == pageTotal && pageStatus == numberPostsOnPage)) {
       newBlock.addClass("full-save");
     } else if (pageStatus > 0) {
       newBlock.addClass("partial-save");
@@ -498,26 +519,22 @@ function createInterface() {
       newBlock.addClass("empty-save");
     }
   }
-  for (var day = 1; day <= dayTotal; day++) {
-    $("<div />", {
-      class: "day-select",
-      name: day,
-      text: "Day " + day
-    }).appendTo($("#day-tab-container"));
+  for (var day = 1; day <= numberDaysTotal; day++) {
+    addDayTabGui(day);
     colourDayTab(day);
   }
   switchDay(currentDay);
-  if (gmNames.length > 0) {
-    for (var i = 0; i < gmNames.length; i++) {
-      $("#gm-names").append("<button class='gm-name'>" + gmNames[i] + "</button>");
+  if (gmNameList.length > 0) {
+    for (var i = 0; i < gmNameList.length; i++) {
+      addGmGui(gmNameList[i]);
     }
   }
-  if (playerNames.length > 0) {
-    for (var i = 0; i < playerNames.length; i++) {
-      var playerEle = addPlayerGui(playerNames[i]);
-      if (playerStates.hasOwnProperty(playerNames[i])) {
-        $(".player-name[name='" + playerNames[i] + "'] .player-state").text(getPlayerState(playerStates[playerNames[i]]));
-        if (playerStates[playerNames[i]] == -1) {
+  if (playerNameList.length > 0) {
+    for (var i = 0; i < playerNameList.length; i++) {
+      var playerEle = addPlayerGui(playerNameList[i]);
+      if (playerStatusList.hasOwnProperty(playerNameList[i])) {
+        $(".player-block[name='" + playerNameList[i] + "'] .player-state").text(getPlayerState(playerStatusList[playerNameList[i]]));
+        if (playerStatusList[playerNameList[i]] == -1) {
           playerEle.addClass("alive-player");
         } else {
           playerEle.addClass("dead-player");
@@ -525,38 +542,38 @@ function createInterface() {
       } else {
         playerEle.addClass("alive-player");
       }
-      if (subNames[playerNames[i]]) {
-        for (var j = 0; j < subNames[playerNames[i]].length; j++) {
-          addSubGui(playerNames[i], subNames[playerNames[i]][j]);
+      if (subNameList[playerNameList[i]]) {
+        for (var j = 0; j < subNameList[playerNameList[i]].length; j++) {
+          addSubGui(playerNameList[i], subNameList[playerNameList[i]][j]);
         }
       }
     }
   }
-  if (tallyStatus == 2) {
+  if (threadScriptMode == 2) {
     $("#game-configuration").show();
     $("#toggle-game-configuration").text("Hide game configuration");
   }
   $("#update-tally").click(function() {
-    if (playerNames.length > 0) {
+    if (playerNameList.length > 0) {
       generateNicknames();
     }
     var start = 1;
     var end = 200000;
-    if (dayOptions[currentDay] && dayOptions[currentDay]["startSelected"] == "start-post") {
-      start = parseInt(dayOptions[currentDay]["startPost"]);
+    if (dayDataList[currentDay] && dayDataList[currentDay]["startSelected"] == "start-post") {
+      start = parseInt(dayDataList[currentDay]["startPost"]);
     }
-    if (dayOptions[currentDay] && dayOptions[currentDay]["endSelected"] == "end-post") {
-      end = parseInt(dayOptions[currentDay]["endPost"]);
+    if (dayDataList[currentDay] && dayDataList[currentDay]["endSelected"] == "end-post") {
+      end = parseInt(dayDataList[currentDay]["endPost"]);
     }
     var tally = getTallyForRange(start, end);
-    savedTallies[currentDay] = tally;
-    localStorage.setItem("savedTallies" + threadId, JSON.stringify(savedTallies));
+    savedTallyList[currentDay] = tally;
+    localStorage.setItem("savedTallyList" + threadId, JSON.stringify(savedTallyList));
     $("#tally-body").html(tallyToHtml(tally));
   });
   $("#copy-tally").click(function () {
-    if (savedTallies[currentDay]) {
+    if (savedTallyList[currentDay]) {
       $("#fmu-main-container").append("<textarea id='data-container'></textarea>");
-      $("#data-container").val(tallyToBbcode(savedTallies[currentDay]));
+      $("#data-container").val(tallyToBbcode(savedTallyList[currentDay]));
       $("#data-container").select();
       document.execCommand("copy");
       $("#data-container").remove();
@@ -566,11 +583,11 @@ function createInterface() {
     $("#fmu-main-container").append("<textarea id='data-container'></textarea>");
     var start = 1;
     var end = 200000;
-    if (dayOptions[currentDay] && dayOptions[currentDay]["startSelected"] == "start-post") {
-      start = parseInt(dayOptions[currentDay]["startPost"]);
+    if (dayDataList[currentDay] && dayDataList[currentDay]["startSelected"] == "start-post") {
+      start = parseInt(dayDataList[currentDay]["startPost"]);
     }
-    if (dayOptions[currentDay] && dayOptions[currentDay]["endSelected"] == "end-post") {
-      end = parseInt(dayOptions[currentDay]["endPost"]);
+    if (dayDataList[currentDay] && dayDataList[currentDay]["endSelected"] == "end-post") {
+      end = parseInt(dayDataList[currentDay]["endPost"]);
     }
     var voteLog = getVoteLogForRange(start, end);
     $("#data-container").val(voteLog);
@@ -579,13 +596,13 @@ function createInterface() {
     $("#data-container").remove();
   })
   $("#toggle-tally-display").click(function() {
-    if (popoutTally == true) {
-      popoutTally = false;
+    if (isTallyPopout == true) {
+      isTallyPopout = false;
       localStorage.setItem("tallyDisplay" + threadId, "");
       $("#tally-container").removeClass("floating");
       $(this).text("Pop out");
     } else {
-      popoutTally = true;
+      isTallyPopout = true;
       localStorage.setItem("tallyDisplay" + threadId, "1");
       $("#tally-container").addClass("floating");
       $(this).text("Close");
@@ -596,12 +613,12 @@ function createInterface() {
   }
   $("#toggle-game-configuration").click(function() {
     if ($("#game-configuration").is(":visible")) {
-      localStorage.setItem("tallyStatus" + threadId, "1");
+      localStorage.setItem("threadScriptMode" + threadId, "1");
       $("#game-configuration").slideUp(function() {
         $("#toggle-game-configuration").text("Show game configuration");
       });
     } else {
-      localStorage.setItem("tallyStatus" + threadId, "2");
+      localStorage.setItem("threadScriptMode" + threadId, "2");
       $("#game-configuration").slideDown();
       $(this).text("Hide game configuration");
     }
@@ -616,45 +633,45 @@ function createInterface() {
     switchDay($(this).attr("name"));
   });
   $("#start-post").click(function() {
-    if (dayOptions[currentDay] && dayOptions[currentDay]["startPost"]) {
-      post = prompt("Enter the post number to start from", dayOptions[currentDay]["startPost"]);
+    if (dayDataList[currentDay] && dayDataList[currentDay]["startPost"]) {
+      post = prompt("Enter the post number to start from", dayDataList[currentDay]["startPost"]);
     } else {
       post = prompt("Enter the post number to start from");
     }
     if (post && parseInt(post) > 0) {
-      if (!dayOptions[currentDay]) {
-        dayOptions[currentDay] = {};
+      if (!dayDataList[currentDay]) {
+        dayDataList[currentDay] = {};
       }
-      if (dayOptions[currentDay]["endPost"]) {
-        if (parseInt(post) > dayOptions[currentDay]["endPost"]) {
+      if (dayDataList[currentDay]["endPost"]) {
+        if (parseInt(post) > dayDataList[currentDay]["endPost"]) {
           return true;
         }
       }
-      dayOptions[currentDay]["startPost"] = post;
-      dayOptions[currentDay]["startSelected"] = "start-post";
-      localStorage.setItem("dayOptions" + threadId, JSON.stringify(dayOptions));
+      dayDataList[currentDay]["startPost"] = post;
+      dayDataList[currentDay]["startSelected"] = "start-post";
+      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
       colourDayTab(currentDay);
       switchDay(currentDay);
     }
   });
   $("#end-post").click(function() {
-    if (dayOptions[currentDay] && dayOptions[currentDay]["endPost"]) {
-      post = prompt("Enter the post number to end on", dayOptions[currentDay]["endPost"]);
+    if (dayDataList[currentDay] && dayDataList[currentDay]["endPost"]) {
+      post = prompt("Enter the post number to end on", dayDataList[currentDay]["endPost"]);
     } else {
       post = prompt("Enter the post number to end on");
     }
     if (post && parseInt(post) > 0) {
-      if (!dayOptions[currentDay]) {
-        dayOptions[currentDay] = {};
+      if (!dayDataList[currentDay]) {
+        dayDataList[currentDay] = {};
       }
-      if (dayOptions[currentDay]["startPost"]) {
-        if (parseInt(post) < dayOptions[currentDay]["startPost"]) {
+      if (dayDataList[currentDay]["startPost"]) {
+        if (parseInt(post) < dayDataList[currentDay]["startPost"]) {
           return true;
         }
       }
-      dayOptions[currentDay]["endPost"] = post;
-      dayOptions[currentDay]["endSelected"] = "end-post";
-      localStorage.setItem("dayOptions" + threadId, JSON.stringify(dayOptions));
+      dayDataList[currentDay]["endPost"] = post;
+      dayDataList[currentDay]["endSelected"] = "end-post";
+      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
       colourDayTab(currentDay);
       switchDay(currentDay);
     }
@@ -666,15 +683,15 @@ function createInterface() {
     }
   });
   $("#gm-names").on("click", ".gm-name", function() {
-    gmNames.splice($.inArray($(this).text(), gmNames), 1);
-    localStorage.setItem("gmNames" + threadId, JSON.stringify(gmNames));
+    gmNameList.splice($.inArray($(this).text(), gmNameList), 1);
+    localStorage.setItem("gmNameList" + threadId, JSON.stringify(gmNameList));
     $(this).remove();
   });
-  $("#nighttime-set").click(function() {
-    nightTime = prompt("Enter new time for night");
-    $(this).text(nightTime);
-    if (nightTime) {
-      localStorage.setItem("nightTime" + threadId, nightTime);
+  $("#nightfall-time").click(function() {
+    nightfallTime = prompt("Enter new time for night");
+    $(this).text(nightfallTime);
+    if (nightfallTime) {
+      localStorage.setItem("nightfallTime" + threadId, nightfallTime);
     }
   });
   $("#add-player").click(function() {
@@ -707,13 +724,13 @@ function createInterface() {
   $("#reset-players").click(function() {
     clearPlayers();
   });
-  $("#player-list").on("click", ".edit-player", function() {
+  $("#player-list").on("click", ".player-name", function() {
     var oldName = $(this).text();
     var newName = prompt("Enter new player name", oldName);
     if (newName) {
-      updatePlayerName(oldName, newName);
+      editPlayerName(oldName, newName);
       $(this).text(newName);
-      $(this).parents(".player-name").attr("name", newName);
+      $(this).parents(".player-block").attr("name", newName);
     } else if (newName == "") {
       removePlayer(oldName);
     }
@@ -722,35 +739,35 @@ function createInterface() {
     var newState = prompt("Enter the night/day of death. Leave blank to mark player as alive.");
     if (newState != null) {
       if (newState == "") {
-        playerStates[$(this).parent().attr("name")] = -1;
-        localStorage.setItem("playerStates" + threadId, JSON.stringify(playerStates));
-        $(this).closest(".player-name").removeClass("dead-player").addClass("alive-player");
+        playerStatusList[$(this).parent().attr("name")] = -1;
+        localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
+        $(this).closest(".player-block").removeClass("dead-player").addClass("alive-player");
         $(this).text(getPlayerState(-1));
       } else {
         newState = parseInt(newState);
         if (newState > 0) {
-          playerStates[$(this).parent().attr("name")] = newState;
-          localStorage.setItem("playerStates" + threadId, JSON.stringify(playerStates));
-          $(this).closest(".player-name").removeClass("alive-player").addClass("dead-player");
+          playerStatusList[$(this).parent().attr("name")] = newState;
+          localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
+          $(this).closest(".player-block").removeClass("alive-player").addClass("dead-player");
           $(this).text(getPlayerState(newState));
         }
       }
     }
   });
   $("#player-list").on("click", ".add-sub", function() {
-    player = $(this).parents(".player-name").children(".edit-player").text();
+    player = $(this).parents(".player-block").children(".player-name").text();
     newSub = prompt("Enter alternative name for player - e.g. subs or nicknames");
     if (newSub) {
       addSub(player, newSub);
     }
   });
   $("#player-list").on("click", ".sub-name", function() {
-    player = $(this).parents(".player-name").attr("name");
+    player = $(this).parents(".player-block").attr("name");
     sub = $(this).text();
     removeSub(player, sub);
   });
   $("#player-list").on("click", ".remove-player", function() {
-    player = $(this).parents(".player-name").attr("name");
+    player = $(this).parents(".player-block").attr("name");
     removePlayer(player);
   });
   $("#reset-game").click(function() {
@@ -764,30 +781,30 @@ function createInterface() {
       resetScript();
     }
   });
-  if (gmNames.length > 0) {
+  if (gmNameList.length > 0) {
     generateData();
   }
 }
 
-function updatePlayerName(oldName, newName) {
-  var i = $.inArray(oldName, playerNames);
-  playerNames[i] = newName;
-  localStorage.setItem("playerNames" + threadId, JSON.stringify(playerNames));
-  if (subNames.hasOwnProperty(oldName)) {
-    subNames[newName] = subNames[oldName];
-    delete subNames[oldName];
-    localStorage.setItem("subNames" + threadId, JSON.stringify(subNames));
+function editPlayerName(oldName, newName) {
+  var i = $.inArray(oldName, playerNameList);
+  playerNameList[i] = newName;
+  localStorage.setItem("playerNameList" + threadId, JSON.stringify(playerNameList));
+  if (subNameList.hasOwnProperty(oldName)) {
+    subNameList[newName] = subNameList[oldName];
+    delete subNameList[oldName];
+    localStorage.setItem("subNameList" + threadId, JSON.stringify(subNameList));
   }
-  if (playerStates.hasOwnProperty(oldName)) {
-    playerStates[newName] = playerStates[oldName];
-    delete playerStates[oldName];
-    localStorage.setItem("playerStates" + threadId, JSON.stringify(playerStates));
+  if (playerStatusList.hasOwnProperty(oldName)) {
+    playerStatusList[newName] = playerStatusList[oldName];
+    delete playerStatusList[oldName];
+    localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
   }
-  for (var i in unrecognisedVoters) {
+  for (var i in unrecognisedVoterList) {
     $(".unrecognised-voter[name='" + oldName + "']").attr("name", newName);
-    if (diceCoefficient(unrecognisedVoters[i], newName) > 0.9) {
-      unrecognisedVoters.splice(i, 1);
-      localStorage.setItem("unrecognisedVoters" + threadId, JSON.stringify(unrecognisedVoters));
+    if (diceCoefficient(unrecognisedVoterList[i], newName) > 0.9) {
+      unrecognisedVoterList.splice(i, 1);
+      localStorage.setItem("unrecognisedVoterList" + threadId, JSON.stringify(unrecognisedVoterList));
       $(".unrecognised-voter[name='" + newName + "']").removeClass("unrecognised-voter");
       break;
     }
@@ -804,75 +821,87 @@ function getPlayerState(state) {
 
 function switchDay(day) {
   currentDay = day;
-  localStorage.setItem("dayView" + threadId, day);
+  localStorage.setItem("selectedDay" + threadId, day);
   $(".day-select").removeClass("day-selected");
   $(".day-select[name='" + day + "']").addClass("day-selected");
-  if (dayOptions[day]) {
+  if (dayDataList[day]) {
     $(".boundary-option").removeClass("boundary-option-selected");
-    if (dayOptions[day]["startPost"]) {
-      $("#start-post").text("Post #" + dayOptions[day]["startPost"]);
+    if (dayDataList[day]["startPost"]) {
+      $("#start-post").text("Post #" + dayDataList[day]["startPost"]);
     } else {
       $("#start-post").text("Post #?");
     }
-    if (dayOptions[day]["startSelected"]) {
-      $("#" + dayOptions[day]["startSelected"]).addClass("boundary-option-selected");
+    if (dayDataList[day]["startSelected"]) {
+      $("#" + dayDataList[day]["startSelected"]).addClass("boundary-option-selected");
     }
-    $("#start-time").text(nightTime + 1);
-    if (dayOptions[day]["endSelected"]) {
-      $("#" + dayOptions[day]["endSelected"]).addClass("boundary-option-selected");
+    $("#start-time").text(nightfallTime + 1);
+    if (dayDataList[day]["endSelected"]) {
+      $("#" + dayDataList[day]["endSelected"]).addClass("boundary-option-selected");
     }
-    if (dayOptions[day]["endPost"]) {
-      $("#end-post").text("Post #" + dayOptions[day]["endPost"]);
+    if (dayDataList[day]["endPost"]) {
+      $("#end-post").text("Post #" + dayDataList[day]["endPost"]);
     } else {
       $("#end-post").text("Post #?");
     }
-    $("#end-time").text(nightTime);
+    $("#end-time").text(nightfallTime);
   } else {
     $(".boundary-option").removeClass("boundary-option-selected");
     $("#start-post").text("Post #?");
-    $("#start-time").text(nightTime + 1);
+    $("#start-time").text(nightfallTime + 1);
     $("#end-post").text("Post #?");
-    $("#end-time").text(nightTime);
+    $("#end-time").text(nightfallTime);
   }
-  if (savedTallies[day]) {
-    $("#tally-body").html(tallyToHtml(savedTallies[day]));
+  if (savedTallyList[day]) {
+    $("#tally-body").html(tallyToHtml(savedTallyList[day]));
   } else {
     $("#tally-body").html("");
   }
 }
 
+function addDayTabGui(day) {
+  $("<div />", {
+    class: "day-select",
+    name: day,
+    text: "Day " + day
+  }).appendTo("#day-tab-container");
+}
+
+function deleteDayData(day) {
+  if (dayDataList[day]) {
+    delete dayDataList[day];
+    localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+  }
+  if (savedTallyList[day]) {
+    delete savedTallyList[day];
+    localStorage.setItem("savedTallyList" + threadId, JSON.stringify(savedTallyList));
+  }
+}
+
 function changeDayCount(change) {
   if (change > 0) {
-    dayTotal++;
-    $("#day-tab-container").append("<div class='day-select' name='" + dayTotal + "'>Day " + dayTotal + "</div>")
-    colourDayTab(dayTotal);
+    numberDaysTotal++;
+    addDayTabGui(numberDaysTotal);
+    colourDayTab(numberDaysTotal);
   } else {
-    if (dayTotal > 1) {
-      dayTotal--;
-      if (dayOptions[dayTotal + 1]) {
-        delete dayOptions[dayTotal + 1];
-        localStorage.setItem("dayOptions" + threadId, JSON.stringify(dayOptions));
+    if (numberDaysTotal > 1) {
+      deleteDayData(numberDaysTotal);
+      numberDaysTotal--;
+      if (currentDay > numberDaysTotal) {
+        switchDay(numberDaysTotal);
       }
-      if (savedTallies[dayTotal + 1]) {
-        delete savedTallies[dayTotal + 1];
-        localStorage.setItem("savedTallies" + threadId, JSON.stringify(savedTallies));
-      }
-      if (currentDay > dayTotal) {
-        switchDay(dayTotal);
-      }
-      $("#day-tab-container .day-select[name='" + (dayTotal + 1) + "']").remove();
+      $("#day-tab-container .day-select[name='" + (numberDaysTotal + 1) + "']").remove();
     }
   }
-  localStorage.setItem("dayCount" + threadId, dayTotal + "");
+  localStorage.setItem("dayCount" + threadId, numberDaysTotal + "");
 }
 
 function colourDayTab(day) {
   var dayTab = $(".day-select[name='" + day + "']");
   dayTab.removeClass("partial-data-day").removeClass("full-data-day").removeClass("empty-data-day");
-  if (dayOptions[day]) {
-    if (dayOptions[day]["startSelected"] && dayOptions[day]["endSelected"]) {
+  if (dayDataList[day]) {
+    if (dayDataList[day]["startSelected"] && dayDataList[day]["endSelected"]) {
       dayTab.addClass("full-data-day")
-    } else if (dayOptions[day]["startSelected"] || dayOptions[day]["endSelected"]) {
+    } else if (dayDataList[day]["startSelected"] || dayDataList[day]["endSelected"]) {
       dayTab.addClass("partial-data-day");
     } else {
       dayTab.addClass("empty-data-day");
@@ -901,13 +930,13 @@ function parseAllVotes() {
     var voteType = getVoteType(raw);
     var voteTarget = getVoteTarget(raw);
     if (voteType != 0) {
-      recognisedVotes[post] = {};
-      recognisedVotes[post]["user"] = fulldata[post]["u"];
-      recognisedVotes[post]["type"] = voteType;
-      recognisedVotes[post]["target"] = voteTarget;
-      recognisedVotes[post]["time"] = fulldata[post]["t"];
-      recognisedVotes[post]["link"] = fulldata[post]["l"];
-      recognisedVotes[post]["raw"] = raw;
+      recognisedVoteList[post] = {};
+      recognisedVoteList[post]["user"] = fulldata[post]["u"];
+      recognisedVoteList[post]["type"] = voteType;
+      recognisedVoteList[post]["target"] = voteTarget;
+      recognisedVoteList[post]["time"] = fulldata[post]["t"];
+      recognisedVoteList[post]["link"] = fulldata[post]["l"];
+      recognisedVoteList[post]["raw"] = raw;
     }
   });
 }
@@ -915,13 +944,13 @@ function parseAllVotes() {
 function getVoteType(vote) {
   var hasVote = false;
   var hasUnvote = false;
-  var lastUnvote = vote.lastIndexOf(unvotingWord);
-  var lastVote = vote.lastIndexOf(votingWord);
-  var char_diffs = unvotingWord.length - votingWord.length;
-  if (vote.indexOf(unvotingWord) >= 0) {
+  var lastUnvote = vote.lastIndexOf(unvoteKeyword);
+  var lastVote = vote.lastIndexOf(voteKeyword);
+  var char_diffs = unvoteKeyword.length - voteKeyword.length;
+  if (vote.indexOf(unvoteKeyword) >= 0) {
     hasUnvote = true;
   }
-  if (vote.replace(new RegExp(unvotingWord, "g"), "").indexOf(votingWord) >= 0) {
+  if (vote.replace(new RegExp(unvoteKeyword, "g"), "").indexOf(voteKeyword) >= 0) {
     hasVote = true;
   }
   if (hasVote == true) {
@@ -942,10 +971,10 @@ function getVoteType(vote) {
 }
 
 function getVoteTarget(vote) {
-  var voteTarget = vote.split(":").pop().split(unvotingWord).pop().split(votingWord).pop().trim();
+  var voteTarget = vote.split(":").pop().split(unvoteKeyword).pop().split(voteKeyword).pop().trim();
   if (voteTarget == "") {
     return null;
-  } else if (playerNames.length > 0) {
+  } else if (playerNameList.length > 0) {
     return matchPlayer(voteTarget);
   } else {
     return voteTarget;
@@ -956,13 +985,13 @@ function getTallyForRange(start, end) {
   parseAllVotes();
   var playerVotes = {};
   var totalVotes = {};
-  Object.keys(recognisedVotes).forEach(function(post) {
+  Object.keys(recognisedVoteList).forEach(function(post) {
     post = parseInt(post);
     if (post >= start && post <= end) {
-      var vote = recognisedVotes[post];
+      var vote = recognisedVoteList[post];
       var type = vote["type"];
       if (!playerVotes[vote["user"]]) {
-        if (playerNames.length > 0 && $.inArray(vote["user"], playerNames) == -1) {
+        if (playerNameList.length > 0 && $.inArray(vote["user"], playerNameList) == -1) {
           registerUnrecognisedVoter(vote["user"]);
         }
         playerVotes[vote["user"]] = {};
@@ -978,12 +1007,12 @@ function getTallyForRange(start, end) {
       }
     }
   });
-  for (var i in playerNames) {
-    if (playerStates[playerNames[i]] != -1 && playerStates[playerNames[i]] < currentDay) {
+  for (var i in playerNameList) {
+    if (playerStatusList[playerNameList[i]] != -1 && playerStatusList[playerNameList[i]] < currentDay) {
       continue;
     }
-    if (!playerVotes.hasOwnProperty(playerNames[i])) {
-      playerVotes[playerNames[i]] = {
+    if (!playerVotes.hasOwnProperty(playerNameList[i])) {
+      playerVotes[playerNameList[i]] = {
         "target": "",
         "post": 0,
         "link": ""
@@ -1005,25 +1034,25 @@ function getTallyForRange(start, end) {
 function getVoteLogForRange(start, end) {
   parseAllVotes();
   var voteLog = "";
-  Object.keys(recognisedVotes).sort(function(a, b) {
+  Object.keys(recognisedVoteList).sort(function(a, b) {
     return a - b;
   }).filter(function(post) {
     return post >= start && post <= end;
   }).forEach(function(post) {
-    var type = recognisedVotes[post]["type"];
+    var type = recognisedVoteList[post]["type"];
     voteLog += "[" + post + "] ";
-    voteLog += recognisedVotes[post]["user"];
+    voteLog += recognisedVoteList[post]["user"];
     if (type == 2) {
-      voteLog += " votes " + recognisedVotes[post]["target"];
+      voteLog += " votes " + recognisedVoteList[post]["target"];
     } else if (type == 1) {
-      voteLog += " unvotes and votes " + recognisedVotes[post]["target"];
+      voteLog += " unvotes and votes " + recognisedVoteList[post]["target"];
     } else if (type == -1) {
-      voteLog += " unvotes" + (recognisedVotes[post]["target"] != null ? " " + recognisedVotes[post]["target"] : "");
+      voteLog += " unvotes" + (recognisedVoteList[post]["target"] != null ? " " + recognisedVoteList[post]["target"] : "");
     } else {
       //Should not happen
       voteLog += " exposes a bug in this script";
     }
-    voteLog += " (" + getPostLink(recognisedVotes[post]["link"]) + ")\n";
+    voteLog += " (" + getPostLink(recognisedVoteList[post]["link"]) + ")\n";
   });
   return voteLog;
 }
@@ -1061,7 +1090,7 @@ function tallyToHtml(tally) {
   }).forEach(function(target) {
     var voterList = "";
     for (var voter in tally[target]) {
-      if ($.inArray(tally[target][voter][0], unrecognisedVoters) >= 0) {
+      if ($.inArray(tally[target][voter][0], unrecognisedVoterList) >= 0) {
         voterList += "<span class='voter-wrap'><a class='vote-link' href='" + getPostLink(tally[target][voter][2]) + "'>" + tally[target][voter][1] + "</a><span class='voter-name unrecognised-voter' name='" + tally[target][voter][0] + "'>" + tally[target][voter][0] + "</span></span>";
       } else {
         voterList += "<span class='voter-wrap'><a class='vote-link' href='" + getPostLink(tally[target][voter][2]) + "'>" + tally[target][voter][1] + "</a><span class='voter-name'>" + tally[target][voter][0] + "</span></span>";
@@ -1080,21 +1109,21 @@ function tallyToHtml(tally) {
 }
 
 function registerUnrecognisedVoter(user) {
-  if ($.inArray(user, unrecognisedVoters) == -1) {
-    var recognised = false;
-    for (var i in playerNames) {
-      if (diceCoefficient(playerNames[i], user) > 0.9) {
-        $(".player-name[name='" + playerNames[i] + "'] .edit-player").text(user);
-        $(".player-name[name='" + playerNames[i] + "']").attr("name", user);
-        updatePlayerName(playerNames[i], user);
-        recognised = true;
+  if ($.inArray(user, unrecognisedVoterList) == -1) {
+    var recognisedVoter = false;
+    for (var i in playerNameList) {
+      if (diceCoefficient(playerNameList[i], user) > 0.9) {
+        $(".player-block[name='" + playerNameList[i] + "'] .player-name").text(user);
+        $(".player-block[name='" + playerNameList[i] + "']").attr("name", user);
+        editPlayerName(playerNameList[i], user);
+        recognisedVoter = true;
         return;
       }
     }
   }
-  if (!recognised) {
-    unrecognisedVoters.push(user);
-    localStorage.setItem("unrecognisedVoters" + threadId, JSON.stringify(unrecognisedVoters));
+  if (!recognisedVoter) {
+    unrecognisedVoterList.push(user);
+    localStorage.setItem("unrecognisedVoterList" + threadId, JSON.stringify(unrecognisedVoterList));
   }
 }
 
@@ -1128,21 +1157,21 @@ function diceCoefficient(a, b) {
 }
 
 function matchPlayer(string) {
-  var closestMatch = playerNames[0];
-  var highestScore = diceCoefficient(string, playerNames[0]);
-  for (var i in playerNames) {
-    var score = diceCoefficient(string, playerNames[i]);
+  var closestMatch = playerNameList[0];
+  var highestScore = diceCoefficient(string, playerNameList[0]);
+  for (var i in playerNameList) {
+    var score = diceCoefficient(string, playerNameList[i]);
     if (score == 1) {
-      return playerNames[i];
+      return playerNameList[i];
     }
     if (score > highestScore) {
-      closestMatch = playerNames[i];
+      closestMatch = playerNameList[i];
       highestScore = score;
     }
   }
-  for (var i in subNames) {
-    for (var j in subNames[i]) {
-      var score = diceCoefficient(string, subNames[i][j]);
+  for (var i in subNameList) {
+    for (var j in subNameList[i]) {
+      var score = diceCoefficient(string, subNameList[i][j]);
       if (score == 1) {
         return i;
       }
@@ -1152,9 +1181,9 @@ function matchPlayer(string) {
       }
     }
   }
-  for (var i in nicknames) {
-    for (var j in nicknames[i]) {
-      var score = diceCoefficient(string, nicknames[i][j]);
+  for (var i in playerNicknameList) {
+    for (var j in playerNicknameList[i]) {
+      var score = diceCoefficient(string, playerNicknameList[i][j]);
       if (score == 1) {
         return i;
       }
@@ -1167,23 +1196,34 @@ function matchPlayer(string) {
   return closestMatch;
 }
 
+function matchPlayerByDay(string, day) {
+  return matchPlayer(string);
+}
+
 function addGm(gmName) {
-  gmNames.push(gmName);
-  localStorage.setItem("gmNames" + threadId, JSON.stringify(gmNames));
-  $("#gm-names").append("<button class='gm-name'>" + gmName + "</button>");
-  if (gmNames.length == 1) {
+  gmNameList.push(gmName);
+  localStorage.setItem("gmNameList" + threadId, JSON.stringify(gmNameList));
+  addGmGui(gmName);
+  if (gmNameList.length == 1) {
     generateData();
   }
 }
 
+function addGmGui(gmName) {
+  $("<button />", {
+    class: "gm-name input-button",
+    text: gmName
+  }).appendTo($("#gm-names"));
+}
+
 function addPlayer(playerName) {
-  if ($.inArray(playerName, playerNames) == -1) {
-    playerNames.push(playerName);
-    localStorage.setItem("playerNames" + threadId, JSON.stringify(playerNames));
-    for (var i in unrecognisedVoters) {
-      if (diceCoefficient(unrecognisedVoters[i], playerName) > 0.9) {
-        unrecognisedVoters.splice(i, 1);
-        localStorage.setItem("unrecognisedVoters" + threadId, JSON.stringify(unrecognisedVoters));
+  if ($.inArray(playerName, playerNameList) == -1) {
+    playerNameList.push(playerName);
+    localStorage.setItem("playerNameList" + threadId, JSON.stringify(playerNameList));
+    for (var i in unrecognisedVoterList) {
+      if (diceCoefficient(unrecognisedVoterList[i], playerName) > 0.9) {
+        unrecognisedVoterList.splice(i, 1);
+        localStorage.setItem("unrecognisedVoterList" + threadId, JSON.stringify(unrecognisedVoterList));
         $(".unrecognised-voter[name='" + playerName + "']").removeClass("unrecognised-voter");
         break;
       }
@@ -1194,15 +1234,15 @@ function addPlayer(playerName) {
 
 function addPlayerGui(playerName) {
   return $("<li />", {
-    class: "player-name alive-player",
+    class: "player-block alive-player",
     name: playerName
   })
     .append($("<button />", {
-      class: "edit-player",
+      class: "player-name input-button edit-button",
       text: playerName
     }))
     .append($("<button />", {
-      class: "player-state",
+      class: "player-state input-button",
       text: "alive"
     }))
     .append($("<span />", {
@@ -1212,7 +1252,7 @@ function addPlayerGui(playerName) {
       class: "player-controls"
     })
     .append($("<button />", {
-      class: "add-sub",
+      class: "add-sub input-button",
       text: "+Alias"
     }))
     .append($("<button />", {
@@ -1223,72 +1263,71 @@ function addPlayerGui(playerName) {
 }
 
 function removePlayer(playerName) {
-  index = $.inArray(playerName, playerNames);
+  index = $.inArray(playerName, playerNameList);
   if (index >= 0) {
-    playerNames.splice(index, 1);
-    localStorage.setItem("playerNames" + threadId, JSON.stringify(playerNames));
-    if (subNames.hasOwnProperty(playerName)) {
-      delete subNames[playerName];
-      localStorage.setItem("subNames" + threadId, JSON.stringify(subNames));
+    playerNameList.splice(index, 1);
+    localStorage.setItem("playerNameList" + threadId, JSON.stringify(playerNameList));
+    if (subNameList.hasOwnProperty(playerName)) {
+      delete subNameList[playerName];
+      localStorage.setItem("subNameList" + threadId, JSON.stringify(subNameList));
     }
-    if (playerStates.hasOwnProperty(playerName)) {
-      delete playerStates[playerName];
-      localStorage.setItem("playerStates" + threadId, JSON.stringify(playerStates));
+    if (playerStatusList.hasOwnProperty(playerName)) {
+      delete playerStatusList[playerName];
+      localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
     }
-    $(".player-name[name='" + playerName + "']").remove();
+    $(".player-block[name='" + playerName + "']").remove();
   }
 }
 
 function clearPlayers() {
-  playerNames = [];
-  subNames = {};
-  nicknames = {};
-  playerStates = {};
-  localStorage.setItem("playerNames" + threadId, JSON.stringify(playerNames));
-  localStorage.setItem("subNames" + threadId, JSON.stringify(subNames));
-  localStorage.setItem("playerStates" + threadId, JSON.stringify(playerStates));
+  playerNameList = [];
+  subNameList = {};
+  playerNicknameList = {};
+  playerStatusList = {};
+  localStorage.setItem("playerNameList" + threadId, JSON.stringify(playerNameList));
+  localStorage.setItem("subNameList" + threadId, JSON.stringify(subNameList));
+  localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
   $("#player-list").text("");
 }
 
 function addSub(playerName, subName) {
-  if (!subNames[playerName]) {
-    subNames[playerName] = [];
+  if (!subNameList[playerName]) {
+    subNameList[playerName] = [];
   }
-  if ($.inArray(subName, subNames[playerName]) >= 0) {
+  if ($.inArray(subName, subNameList[playerName]) >= 0) {
     return;
   }
-  subNames[playerName].push(subName);
-  localStorage.setItem("subNames" + threadId, JSON.stringify(subNames));
+  subNameList[playerName].push(subName);
+  localStorage.setItem("subNameList" + threadId, JSON.stringify(subNameList));
   addSubGui(playerName, subName);
 }
 
 function addSubGui(playerName, subName) {
-  if ($(".player-name[name='" + playerName + "'] .sub-list").text().length > 0) {
-    $(".player-name[name='" + playerName + "'] .sub-list").append("<button class='sub-name'>" + subName + "</button>");
+  if ($(".player-block[name='" + playerName + "'] .sub-list").text().length > 0) {
+    $(".player-block[name='" + playerName + "'] .sub-list").append("<button class='sub-name'>" + subName + "</button>");
   } else {
-    $(".player-name[name='" + playerName + "'] .sub-list").append("subbing for<button class='sub-name'>" + subName + "</button>");
+    $(".player-block[name='" + playerName + "'] .sub-list").append("subbing for<button class='sub-name'>" + subName + "</button>");
   }
 }
 
 function removeSub(playerName, subName) {
-  index = $.inArray(subName, subNames[playerName]);
+  index = $.inArray(subName, subNameList[playerName]);
   if (index >= 0) {
-    subNames[playerName].splice(index, 1);
-    if (subNames[playerName].length == 0) {
-      subNames[playerName] = "";
-      $(".player-name[name='" + playerName + "']").children(".sub-list").text("");
+    subNameList[playerName].splice(index, 1);
+    if (subNameList[playerName].length == 0) {
+      subNameList[playerName] = "";
+      $(".player-block[name='" + playerName + "']").children(".sub-list").text("");
     }
-    localStorage.setItem("subNames" + threadId, JSON.stringify(subNames));
-    $(".player-name[name='" + playerName + "']").find(".sub-name").filter(function() {return $(this).text() == subName;}).remove();
+    localStorage.setItem("subNameList" + threadId, JSON.stringify(subNameList));
+    $(".player-block[name='" + playerName + "']").find(".sub-name").filter(function() {return $(this).text() == subName;}).remove();
   }
 }
 
 function generateNicknames() {
-  nicknames;
-  for (var i in playerNames) {
-    var player = playerNames[i];
-    if (!nicknames.hasOwnProperty(player)) {
-      nicknames[player] = [];
+  for (var i in playerNameList) {
+    var player = playerNameList[i];
+    if (!playerNicknameList.hasOwnProperty(player)) {
+      playerNicknameList[player] = [];
     }
     if (player.indexOf(" ") >= 0) {
       var newNick = "";
@@ -1296,7 +1335,7 @@ function generateNicknames() {
       for (var c in splitName) {
         newNick += splitName[c].charAt(0);
       }
-      nicknames[player].push(newNick);
+      playerNicknameList[player].push(newNick);
     }
     if (player.indexOf("_") >= 0) {
       var newNick = "";
@@ -1304,20 +1343,20 @@ function generateNicknames() {
       for (var c in splitName) {
         newNick += splitName[c].charAt(0);
       }
-      if ($.inArray(newNick, nicknames[player]) == -1) {
-        nicknames[player].push(newNick);
+      if ($.inArray(newNick, playerNicknameList[player]) == -1) {
+        playerNicknameList[player].push(newNick);
       }
     }
     var uppercaseName = getUpperCase(player);
     var nonLowercaseName = getNonLowerCase(player);
     var lowercaseName = getLowerCase(player);
     if (uppercaseName.length > 1 && lowercaseName.length > 2) {
-      if ($.inArray(nonLowercaseName, nicknames[player]) == -1) {
-        nicknames[player].push(nonLowercaseName);
+      if ($.inArray(nonLowercaseName, playerNicknameList[player]) == -1) {
+        playerNicknameList[player].push(nonLowercaseName);
       }
     } else if(nonLowercaseName.length > 5 && lowercaseName.length > 1) {
-      if ($.inArray(lowercaseName, nicknames[player]) == -1) {
-        nicknames[player].push(lowercaseName);
+      if ($.inArray(lowercaseName, playerNicknameList[player]) == -1) {
+        playerNicknameList[player].push(lowercaseName);
       }
     }
   }
@@ -1389,16 +1428,16 @@ function generateData() {
   var data = {};
   $("#posts").find(".page").each(function (i) {
     var username = $(this).find(".alt2 .bigusername").text();
-    if ($(this).find("[id^='post_message_'] > b").length > 0 || (includeGm && $.inArray(username, gmNames) > -1)) {
-      if ($.inArray(username, ignoredPlayers) > -1 || !includeGm && $.inArray(username, gmNames) > -1) {
+    if ($(this).find("[id^='post_message_'] > b").length > 0 || (includeGm && $.inArray(username, gmNameList) > -1)) {
+      if ($.inArray(username, ignoredPlayerList) > -1 || !includeGm && $.inArray(username, gmNameList) > -1) {
         return true;
       }
       var votingData = {};
       var i = 0;
-      if (!includeGm || $.inArray(username, gmNames) > -1) {
+      if (!includeGm || $.inArray(username, gmNameList) > -1) {
         $(this).find(".alt1 > div > b").each(function () {
           content = $(this).html().replace(/(['"])/g, '\\$1').replace(/\n/g, ' ').trim().toLowerCase();
-          if (content.indexOf(votingWord) >= 0 || content.indexOf(unvotingWord) >= 0) {
+          if (content.indexOf(voteKeyword) >= 0 || content.indexOf(unvoteKeyword) >= 0) {
             votingData[i] = content;
             i++;
           }
@@ -1420,54 +1459,54 @@ function generateData() {
       data[$(this).find(".thead > [id^=postcount]").attr("name")] = postData;
     }
   });
-  if (curPage > 0 && threadId > 0) {
-    localStorage.setItem("pageStatus" + threadId + "-" + curPage, postTotal + "");
-    localStorage.setItem("pageData" + threadId + "-" + curPage, JSON.stringify(data));
-    $(".page-link[page='" + curPage + "']").removeClass("partial-save").removeClass("empty-save").addClass("full-save");
+  if (currentPage > 0 && threadId > 0) {
+    localStorage.setItem("pageStatus" + threadId + "-" + currentPage, numberPostsOnPage + "");
+    localStorage.setItem("pageData" + threadId + "-" + currentPage, JSON.stringify(data));
+    $(".page-link[page='" + currentPage + "']").removeClass("partial-save").removeClass("empty-save").addClass("full-save");
   } else {
-    alert("Could not save data - page is " + curPage + " and thread id is " + threadId);
+    alert("Could not save data - page is " + currentPage + " and thread id is " + threadId);
   }
 }
 
 function resetData() {
-  localStorage.removeItem("tallyStatus" + threadId);
-  localStorage.removeItem("gmNames" + threadId);
-  localStorage.removeItem("playerNames" + threadId);
-  localStorage.removeItem("subNames" + threadId);
+  localStorage.removeItem("threadScriptMode" + threadId);
+  localStorage.removeItem("gmNameList" + threadId);
+  localStorage.removeItem("playerNameList" + threadId);
+  localStorage.removeItem("subNameList" + threadId);
   localStorage.removeItem("dayCount" + threadId);
-  localStorage.removeItem("savedTallies" + threadId);
-  localStorage.removeItem("dayOptions" + threadId);
-  localStorage.removeItem("nightTime" + threadId);
-  localStorage.removeItem("playerStates" + threadId);
+  localStorage.removeItem("savedTallyList" + threadId);
+  localStorage.removeItem("dayDataList" + threadId);
+  localStorage.removeItem("nightfallTime" + threadId);
+  localStorage.removeItem("playerStatusList" + threadId);
   $(".full-save, .partial-save").each(function() {
     pg = $(this).text();
     localStorage.removeItem("pageData" + threadId + "-" + pg);
     localStorage.removeItem("pageStatus" + threadId + "-" + pg);
   });
-  gmNames = [];
-  playerNames = [];
-  subNames = {};
-  recognisedVotes = {};
-  dayOptions = {};
-  savedTallies = {};
-  playerStates = {};
-  nicknames = {};
-  curPage = 0;
-  postTotal = 0;
-  tallyStatus = 0;
+  gmNameList = [];
+  playerNameList = [];
+  subNameList = {};
+  recognisedVoteList = {};
+  dayDataList = {};
+  savedTallyList = {};
+  playerStatusList = {};
+  playerNicknameList = {};
+  currentPage = 0;
+  numberPostsOnPage = 0;
+  threadScriptMode = 0;
   currentDay = 1;
-  dayTotal = 1;
-  nightTime = 2000;
-  popoutTally = false;
-  unvotingWord = "unvote";
-  votingWord = "vote";
+  numberDaysTotal = 1;
+  nightfallTime = 2000;
+  isTallyPopout = false;
+  unvoteKeyword = "unvote";
+  voteKeyword = "vote";
 }
 
 function resetScript() {
   $("#fmu-main-container").remove();
-  $("#qrform").after("<button id='start-tally'>Turn on Forum Mafia Utilities for this thread</button>");
-  $("#start-tally").click(function() {
-    localStorage.setItem("tallyStatus" + threadId, "1");
+  $("#qrform").after("<button id='enable-script'>Turn on Forum Mafia Utilities for this thread</button>");
+  $("#enable-script").click(function() {
+    localStorage.setItem("threadScriptMode" + threadId, "1");
     createInterface();
     $(this).remove();
   });
