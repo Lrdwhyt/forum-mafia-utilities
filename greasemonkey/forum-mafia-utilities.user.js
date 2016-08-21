@@ -20,12 +20,30 @@ GM_addStyle(`
   --dark-contrast-color-highlighted: #455a64;
   --med-contrast-color: #e91e63;
 }
+#script-manager {
+  background-color: var(--light-color);
+  margin-top: 10px;
+}
+#script-title {
+  background-color: var(--dark-color);
+  color: #fff;
+  display: inline-block;
+  margin-right: 5px;
+  padding: 20px 10px;
+}
+#settings-display {
+  display: none;
+  padding: 10px;
+}
+#memory-usage {
+  margin: 10px 0;
+}
 #fmu-main-container {
   margin-bottom: 10px;
   padding-top: 10px;
 }
 #page-container {
-  margin: 10px 5px;
+  margin: 10px 0;
 }
 .page-link.full-save {
   background-color: var(--dark-color);
@@ -83,13 +101,33 @@ GM_addStyle(`
   display: inline-block;
   padding: 5px 10px;
 }
-#fmu-main-container button, #enable-script {
+#script-manager button, #fmu-main-container button, #settings-display button {
   display: inline-block;
-  height: 27px;
+  font-family: Verdana, sans-serif;
   margin: 5px;
+  padding: 9px;
 }
-#day-controls {
-  margin: 0 5px;
+.input-button {
+  background-color: #fff;
+  border: none;
+}
+.input-button:hover {
+  -moz-transition-duration: 0.4s;
+  background-color: #f5f5f5;
+  border-color: #f5f5f5;
+}
+.function-button {
+  -moz-transition-duration: 0.3s;
+  background-color: #607d8b;
+  border: none;
+  box-shadow: 0 0 1px #333;
+  color: #fff;
+}
+.function-button:hover {
+  background-color: #455a64;
+}
+.function-button:active {
+  background-color: #546e7a;
 }
 .day-select {
   cursor: pointer;
@@ -120,9 +158,12 @@ GM_addStyle(`
   background-color: var(--dark-contrast-color-highlighted);
   cursor: pointer;
 }
+#toggle-game-configuration-container {
+  background-color: var(--light-color);
+  padding: 10px;
+}
 #day-area {
   background-color: var(--light-color);
-  margin: 0 5px;
   padding: 10px;
 }
 #tally-body {
@@ -209,18 +250,17 @@ GM_addStyle(`
 #game-configuration {
   background-color: var(--light-color);
   display: none;
-  margin: 5px;
   padding: 10px;
-}
-#start-post, #start-time, #end-post, #end-time, .gm-name, #nightfall-time {
-  background-color: #fff;
-  border: none;
 }
 .boundary-option {
   border-bottom: 3px solid #fff;
+  padding-bottom: 6px !important;
 }
-.boundary-option-selected {
-  border-bottom: 3px solid var(--dark-contrast-color) !important;
+.boundary-option.boundary-option-selected {
+  border-bottom: 3px solid var(--dark-contrast-color);
+}
+#toggle-game-configuration {
+  margin: 5px 0 !important;
 }
 #paste-wrapper {
   display: none;
@@ -237,16 +277,9 @@ GM_addStyle(`
 .player-block button {
   margin: 1px 5px !important;
 }
-.player-block button.input-button {
-  background-color: white;
-  border: none;
+.player-block button {
   margin: 2px 5px !important;
-  padding: 2px 5px;
-}
-.player-number {
-  background-color: #d09;
-  color: red;
-  display: inline-block;
+  padding: 5px 7px !important;
 }
 .player-name {
   cursor: text;
@@ -258,11 +291,8 @@ GM_addStyle(`
 .player-controls {
   display: none;
 }
-button.input-button:hover {
-  background-color: #f5f5f5 !important;
-}
 .remove-player {
-  width: 27px;
+  width: 29px;
 }
 li.player-block:hover .player-controls {
   display: inline;
@@ -300,8 +330,53 @@ isTallyPopout = false;
 $(document).ready(function () {
   threadId = getThreadId();
   threadScriptMode = parseInt(localStorage.getItem("threadScriptMode" + threadId));
+  $("<div />", {
+    id: "script-manager"
+  })
+    .append($("<div />", {
+      id: "manager-controls"
+    })
+      .append($("<div />", {
+        id: "script-title",
+        text: "Forum Mafia Utilities"
+      }))
+      .append($("<button />", {
+        class: "function-button",
+        id: "toggle-script",
+        text: "Delete game"
+      }))
+      .append($("<button />", {
+        class: "function-button",
+        id: "edit-settings",
+        text: "Settings"
+      })))
+    .append($("<div />", {
+      id: "settings-display"
+    })
+      .append($("<div />", {
+        id: "memory-usage",
+        text: "Local memory: ~" + Math.round(unescape(encodeURIComponent(JSON.stringify(localStorage))).length * 2 / 1024 / 1024 * 10000) / 10000 + " MB used of 5 MB"
+      }))
+      .append($("<button />", {
+        class: "function-button",
+        id: "reset-script",
+        text: "Clear script data"
+      })))
+      .insertAfter("#qrform");
+  $("#edit-settings").click(function() {
+    $("#settings-display").slideToggle();
+  });
+  $("#toggle-script").click(function() {
+    if ($(this).text() == "Start game") {
+      localStorage.setItem("threadScriptMode" + threadId, "1");
+      createInterface();
+      $(this).text("Delete game");
+    } else {
+      resetData();
+      resetScript();
+    }
+  });
   if (threadScriptMode) {
-    getCurrentPageNumbers();
     createInterface();
   } else {
     resetScript();
@@ -317,12 +392,14 @@ function getCurrentPageNumbers() {
 }
 
 function createInterface() {
+  getCurrentPageNumbers();
   if (localStorage.getItem("dayCount" + threadId)) {
     numberDaysTotal = parseInt(localStorage.getItem("dayCount" + threadId));
   }
   if (localStorage.getItem("gmNameList" + threadId)) {
     gmNameList = JSON.parse(localStorage.getItem("gmNameList" + threadId));
-  } else if (currentPage == 1) {
+  }
+  if (currentPage == 1 && gmNameList.length == 0) {
     gmNameList.push($(".bigusername").first().text());
     localStorage.setItem("gmNameList" + threadId, JSON.stringify(gmNameList));
   }
@@ -350,7 +427,7 @@ function createInterface() {
   if (localStorage.getItem("unrecognisedVoterList" + threadId)) {
     unrecognisedVoterList = JSON.parse(localStorage.getItem("unrecognisedVoterList" + threadId));
   }
-  $("#qrform").after("<div id='fmu-main-container'></div>");
+  $("#script-manager").before("<div id='fmu-main-container'></div>");
   $("<div />", {
     id: "page-container"
   })
@@ -431,10 +508,15 @@ function createInterface() {
       class: "boundary-option input-button edit-button"
     }))
     .appendTo("#fmu-main-container");
-  $("<button />", {
-    id: "toggle-game-configuration",
-    text: "Show game configuration"
-  }).appendTo("#fmu-main-container");
+  $("<div />", {
+    id: "toggle-game-configuration-container"
+  })
+    .append($("<button />", {
+      class: "function-button",
+      id: "toggle-game-configuration",
+      text: "Show game configuration"
+    }))
+    .appendTo("#fmu-main-container");
   $("<div />", {
     id: "game-configuration"
   })
@@ -445,6 +527,7 @@ function createInterface() {
       id: "gm-names"
     }))
     .append($("<button />", {
+      class: "function-button",
       id: "add-gm",
       text: "+"
     }))
@@ -462,14 +545,17 @@ function createInterface() {
       text: "Player names"
     }))
     .append($("<button />", {
+      class: "function-button",
       id: "add-player",
       text: "+"
     }))
     .append($("<button />", {
+      class: "function-button",
       id: "import-players",
       text: "Paste..."
     }))
     .append($("<button />", {
+      class: "function-button",
       id: "reset-players",
       text: "Reset"
     }))
@@ -481,6 +567,7 @@ function createInterface() {
     }))
     .append($("<br />"))
     .append($("<button />", {
+      class: "function-button",
       id: "confirm-paste",
       text: "Import players"
     })))
@@ -490,21 +577,12 @@ function createInterface() {
     .append($("<ol />", {
       id: "player-list"
     })))
-    .append($("<br />"))
-    .append($("<button />", {
-      id: "reset-game",
-      text: "Reset game"
-    }))
-    .append($("<button />", {
-      id: "reset-script",
-      text: "Clear script data"
-    }))
     .appendTo($("#fmu-main-container"));
   for (var pg = 1; pg <= pageTotal; pg++) {
     pageStatus = getPageStatus(threadId, pg);
     newBlock = $("<a />", {
       class: "page-link",
-      href: getForumLink(threadId, pg),
+      href: getPageLink(threadId, pg),
       page: pg,
       text: pg
     }).appendTo($("#page-controls"));
@@ -769,10 +847,6 @@ function createInterface() {
   $("#player-list").on("click", ".remove-player", function() {
     player = $(this).parents(".player-block").attr("name");
     removePlayer(player);
-  });
-  $("#reset-game").click(function() {
-    resetData();
-    resetScript();
   });
   $("#reset-script").click(function() {
     if (confirm("Are you sure you want to reset everything?")) {
@@ -1201,11 +1275,13 @@ function matchPlayerByDay(string, day) {
 }
 
 function addGm(gmName) {
-  gmNameList.push(gmName);
-  localStorage.setItem("gmNameList" + threadId, JSON.stringify(gmNameList));
-  addGmGui(gmName);
-  if (gmNameList.length == 1) {
-    generateData();
+  if ($.inArray(gmName, gmNameList) == -1) {
+    gmNameList.push(gmName);
+    localStorage.setItem("gmNameList" + threadId, JSON.stringify(gmNameList));
+    addGmGui(gmName);
+    if (gmNameList.length == 1) {
+      generateData();
+    }
   }
 }
 
@@ -1256,7 +1332,7 @@ function addPlayerGui(playerName) {
       text: "+Alias"
     }))
     .append($("<button />", {
-      class: "remove-player",
+      class: "remove-player function-button",
       text: "-"
     })))
     .appendTo("#player-list");
@@ -1400,10 +1476,10 @@ function getLowerCase(string) {
 }
 
 function getThreadId() {
-  return $("a.smallfont").first().attr("href").split("&")[0].split("=")[1];
+  return parseInt($("a.smallfont").first().attr("href").split("&")[0].split("=")[1]);
 }
 
-function getForumLink(thread, page) {
+function getPageLink(thread, page) {
   return "http://forums.kingdomofloathing.com/vb/showthread.php?t=" + thread + "&page=" + page;
 }
 
@@ -1436,7 +1512,7 @@ function generateData() {
       var i = 0;
       if (!includeGm || $.inArray(username, gmNameList) > -1) {
         $(this).find(".alt1 > div > b").each(function () {
-          content = $(this).html().replace(/(['"])/g, '\\$1').replace(/\n/g, ' ').trim().toLowerCase();
+          var content = $(this).html().replace(/(['"])/g, '\\$1').replace(/\n/g, ' ').trim().toLowerCase();
           if (content.indexOf(voteKeyword) >= 0 || content.indexOf(unvoteKeyword) >= 0) {
             votingData[i] = content;
             i++;
@@ -1464,7 +1540,7 @@ function generateData() {
     localStorage.setItem("pageData" + threadId + "-" + currentPage, JSON.stringify(data));
     $(".page-link[page='" + currentPage + "']").removeClass("partial-save").removeClass("empty-save").addClass("full-save");
   } else {
-    alert("Could not save data - page is " + currentPage + " and thread id is " + threadId);
+    console.log("Could not save data - page is " + currentPage + " and thread id is " + threadId);
   }
 }
 
@@ -1483,31 +1559,26 @@ function resetData() {
     localStorage.removeItem("pageData" + threadId + "-" + pg);
     localStorage.removeItem("pageStatus" + threadId + "-" + pg);
   });
+  threadScriptMode = 0;
+  includeGm = false;
+  unvoteKeyword = "unvote";
+  voteKeyword = "vote";
   gmNameList = [];
   playerNameList = [];
   subNameList = {};
-  recognisedVoteList = {};
-  dayDataList = {};
-  savedTallyList = {};
-  playerStatusList = {};
   playerNicknameList = {};
-  currentPage = 0;
-  numberPostsOnPage = 0;
-  threadScriptMode = 0;
-  currentDay = 1;
+  playerStatusList = {};
+  savedTallyList = {};
+  recognisedVoteList = {};
+  unrecognisedVoterList = [];
+  dayDataList = {};
   numberDaysTotal = 1;
+  currentDay = 1;
   nightfallTime = 2000;
   isTallyPopout = false;
-  unvoteKeyword = "unvote";
-  voteKeyword = "vote";
 }
 
 function resetScript() {
   $("#fmu-main-container").remove();
-  $("#qrform").after("<button id='enable-script'>Turn on Forum Mafia Utilities for this thread</button>");
-  $("#enable-script").click(function() {
-    localStorage.setItem("threadScriptMode" + threadId, "1");
-    createInterface();
-    $(this).remove();
-  });
+  $("#toggle-script").text("Start game");
 }
