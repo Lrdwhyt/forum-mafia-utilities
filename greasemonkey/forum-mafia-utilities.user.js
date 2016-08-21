@@ -3,7 +3,7 @@
 // @namespace   lrdwhyt
 // @description Number of added functionalities to make playing forum mafia easier. Designed for Forums of Loathing.
 // @include     http://forums.kingdomofloathing.com/vb/showthread.php?*
-// @version     1
+// @version     0.1.0
 // @grant       GM_addStyle
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js
 // ==/UserScript==
@@ -973,7 +973,7 @@ function getTallyForRange(start, end) {
         if (type == 2 || type == 1) {
           playerVotes[vote["user"]]["target"] = vote["target"];
         } else if (type == -1) {
-          playerVotes[vote["user"]]["target"] = null;
+          playerVotes[vote["user"]]["target"] = "";
         }
       }
     }

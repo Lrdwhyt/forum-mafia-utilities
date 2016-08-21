@@ -720,7 +720,7 @@ function getTallyForRange(start, end) {
         if (type == 2 || type == 1) {
           playerVotes[vote["user"]]["target"] = vote["target"];
         } else if (type == -1) {
-          playerVotes[vote["user"]]["target"] = null;
+          playerVotes[vote["user"]]["target"] = "";
         }
       }
     }
