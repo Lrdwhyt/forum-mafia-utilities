@@ -72,7 +72,7 @@ $(document).ready(function () {
       }))
       .append($("<button />", {
         class: "function-button",
-        id: "reset-script",
+        id: "clear-data",
         text: "Clear script data"
       })))
       .insertAfter("#qrform");
@@ -486,6 +486,7 @@ function createInterface() {
     $(this).text(nightfallTime);
     if (nightfallTime) {
       localStorage.setItem("nightfallTime" + threadId, nightfallTime);
+      nightfallTime = parseInt(nightfallTime);
     }
   });
   $("#add-player").click(function() {
@@ -564,8 +565,8 @@ function createInterface() {
     player = $(this).parents(".player-block").attr("name");
     removePlayer(player);
   });
-  $("#reset-script").click(function() {
-    if (confirm("Are you sure you want to reset everything?")) {
+  $("#clear-data").click(function() {
+    if (confirm("Are you sure you want to reset all data?")) {
       resetData();
       localStorage.clear();
       resetScript();
@@ -940,6 +941,7 @@ function diceCoefficient(a, b) {
       if (pairs1[a] == pairs2[b]) {
         score++;
         pairs2.splice(b, 1);
+        break;
       }
     }
   }
@@ -947,8 +949,11 @@ function diceCoefficient(a, b) {
 }
 
 function matchPlayer(string) {
-  var closestMatch = playerNameList[0];
-  var highestScore = diceCoefficient(string, playerNameList[0]);
+  var closestMatch = "No lynch";
+  var highestScore = diceCoefficient(string, "No lynch");
+  if (highestScore == 1) {
+    return closestMatch;
+  }
   for (var i in playerNameList) {
     var score = diceCoefficient(string, playerNameList[i]);
     if (score == 1) {
@@ -958,6 +963,15 @@ function matchPlayer(string) {
       closestMatch = playerNameList[i];
       highestScore = score;
     }
+    if (playerNicknameList.hasOwnProperty(playerNameList[i])) {
+      for (var j in playerNicknameList[playerNameList[i]]) {
+        var score = diceCoefficient(string, playerNicknameList[playerNameList[i]][j]);
+        if (score > highestScore) {
+          closestMatch = playerNameList[i];
+          highestScore = score;
+        }
+      }
+    }
   }
   for (var i in subNameList) {
     for (var j in subNameList[i]) {
@@ -965,19 +979,7 @@ function matchPlayer(string) {
       if (score == 1) {
         return i;
       }
-      if (score > highestScore) {
-        closestMatch = i;
-        highestScore = score;
-      }
-    }
-  }
-  for (var i in playerNicknameList) {
-    for (var j in playerNicknameList[i]) {
-      var score = diceCoefficient(string, playerNicknameList[i][j]);
-      if (score == 1) {
-        return i;
-      }
-      if (score > highestScore) {
+      if (score >= highestScore) {
         closestMatch = i;
         highestScore = score;
       }
@@ -988,6 +990,10 @@ function matchPlayer(string) {
 
 function matchPlayerByDay(string, day) {
   return matchPlayer(string);
+}
+
+function isAlive(player, day) {
+  return true;
 }
 
 function addGm(gmName) {
@@ -1096,9 +1102,9 @@ function addSub(playerName, subName) {
 
 function addSubGui(playerName, subName) {
   if ($(".player-block[name='" + playerName + "'] .sub-list").text().length > 0) {
-    $(".player-block[name='" + playerName + "'] .sub-list").append("<button class='sub-name'>" + subName + "</button>");
+    $(".player-block[name='" + playerName + "'] .sub-list").append("<button class='sub-name input-button'>" + subName + "</button>");
   } else {
-    $(".player-block[name='" + playerName + "'] .sub-list").append("subbing for<button class='sub-name'>" + subName + "</button>");
+    $(".player-block[name='" + playerName + "'] .sub-list").append("subbing for<button class='sub-name input-button'>" + subName + "</button>");
   }
 }
 
