@@ -1219,10 +1219,10 @@ function registerUnrecognisedVoter(user) {
         return;
       }
     }
-  }
-  if (!recognisedVoter) {
-    unrecognisedVoterList.push(user);
-    localStorage.setItem("unrecognisedVoterList" + threadId, JSON.stringify(unrecognisedVoterList));
+    if (!recognisedVoter) {
+      unrecognisedVoterList.push(user);
+      localStorage.setItem("unrecognisedVoterList" + threadId, JSON.stringify(unrecognisedVoterList));
+    }
   }
 }
 
@@ -1505,6 +1505,27 @@ function getLowerCase(string) {
   return result;
 }
 
+function parseDataFromString(string) {
+  string = string.replace(/,/g, "");
+  if (string.indexOf("Today") >= 0) {
+    string = string.replace("Today", "");
+  } else if (string.indexOf("Yesterday") >= 0) {
+    string = string.replace("Yesterday", "");
+  } else {
+    var arr = string.split(" ");
+    var month = arr[1];
+    var day = arr[2].replace("s","").replace("t","").replace("h","").replace("r","").replace("n","").replace("d","");
+    var year = arr[3];
+    var time = arr[4]
+    time = time.split(":");
+    var hour = time[0];
+    var minutes = time[1];
+    if (arr[5] == "PM") {
+      hour += 12;
+    }
+  }
+}
+
 function getThreadId() {
   return parseInt($("a.smallfont").first().attr("href").split("&")[0].split("=")[1]);
 }
@@ -1579,11 +1600,15 @@ function resetData() {
   localStorage.removeItem("gmNameList" + threadId);
   localStorage.removeItem("playerNameList" + threadId);
   localStorage.removeItem("subNameList" + threadId);
+  localStorage.removeItem("dayDataList" + threadId);
   localStorage.removeItem("dayCount" + threadId);
   localStorage.removeItem("savedTallyList" + threadId);
   localStorage.removeItem("dayDataList" + threadId);
+  localStorage.removeItem("selectedData" + threadId);
   localStorage.removeItem("nightfallTime" + threadId);
   localStorage.removeItem("playerStatusList" + threadId);
+  localStorage.removeItem("tallyDisplay" + threadId);
+  localStorage.removeItem("unrecognisedVoterList" + threadId);
   $(".full-save, .partial-save").each(function() {
     pg = $(this).text();
     localStorage.removeItem("pageData" + threadId + "-" + pg);
