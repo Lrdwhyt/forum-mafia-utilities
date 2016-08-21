@@ -1,0 +1,10 @@
+{
+  "name": "Forum Mafia Utilities",
+  "version": "1",
+  "manifest_version": 2,
+  "content_scripts": [{
+    "css": ["forumsofloathing.css"],
+    "js": ["jquery-3.1.0.min.js", "forum-mafia-utilities.user.js"],
+    "matches": ["http://forums.kingdomofloathing.com/vb/showthread.php?*"]
+  }]
+}
