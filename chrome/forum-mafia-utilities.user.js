@@ -909,7 +909,7 @@ function tallyToBbcode(tally) {
     for (var i in tally[""]) {
       voterList.push(tally[""][i][0]);
     }
-    bbcode += "[b]Yet to vote (" + voterList.length + ")[b] - " + voterList.join(", ");
+    bbcode += "[b]Yet to vote (" + voterList.length + ")[/b] - " + voterList.join(", ");
   }
   return bbcode;
 }
