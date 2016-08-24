@@ -186,40 +186,6 @@ GM_addStyle(`
   background-color: var(--light-color);
   padding: 10px;
 }
-#start-date {
-  display: inline-block;
-}
-div.boundary-option {
-  border-bottom: none;
-  padding-bottom: 0px !important;
-}
-div.boundary-option button {
-  padding-bottom: 6px !important;
-}
-#start-date.boundary-option-selected {
-  border: none;
-}
-div.boundary-option-selected button {
-  border-color: var(--dark-contrast-color) !important;
-  padding-bottom: 6px !important;
-}
-#start-year, #start-month, #start-day {
-  background-color: var(--light-color-highlighted);
-  border-bottom: 3px solid var(--light-color-highlighted);
-  margin: 0 !important;
-  padding-left: 3px !important;
-  padding-right: 3px !important;
-  -moz-transition-duration: 0.3s;
-}
-#start-time {
-  margin: 0 !important;
-  background-color: #fff;
-  border-bottom: 3px solid white;
-}
-#toggle-game-configuration-container {
-  background-color: var(--light-color);
-  padding: 10px;
-}
 #tally-body {
   padding: 10px 0;
 }
@@ -297,21 +263,50 @@ div.boundary-option-selected button {
   background-color: var(--med-color);
   color: #333;
 }
+#day-ranges button {
+  border-bottom: 3px solid #fff;
+  padding-bottom: 6px;
+}
+#day-ranges .input-button:hover {
+  border-color: #f5f5f5;
+}
+#day-ranges .boundary-option-selected {
+  border-color: var(--dark-contrast-color) !important;
+}
+#start-date, #end-date {
+  display: inline-block;
+  border-bottom: none;
+  padding-bottom: 0px !important;
+}
+#day-ranges div.boundary-option-selected button.input-button {
+  border-color: var(--dark-contrast-color) !important;
+}
+#start-year, #start-month, #start-day, #end-year, #end-month, #end-day {
+  -moz-transition-duration: 0.4s;
+  webkit-transition-duration: 0.4s;
+  background-color: var(--light-color-highlighted);
+  border-color: var(--light-color-highlighted) !important;
+  margin: 0 !important;
+  padding-left: 3px !important;
+  padding-right: 3px !important;
+}
+#start-time, #end-time {
+  margin: 0 !important;
+  background-color: #fff;
+  border-bottom: 3px solid #fff;
+}
 #data-container {
   height: 0;
   opacity: 0;
+}
+#toggle-game-configuration-container {
+  background-color: var(--light-color);
+  padding: 10px;
 }
 #game-configuration {
   background-color: var(--light-color);
   display: none;
   padding: 10px;
-}
-.boundary-option {
-  border-bottom: 3px solid #fff;
-  padding-bottom: 6px !important;
-}
-.boundary-option.boundary-option-selected {
-  border-bottom: 3px solid var(--dark-contrast-color);
 }
 #toggle-game-configuration {
   margin: 5px 0 !important;
@@ -410,14 +405,23 @@ currentPage = 0;
 pageTotal = 0;
 numberPostsOnPage = 0;
 dayDataList = {};
+dayDataList[1] = {
+      "startDate": new Date(),
+      "startPost": "1",
+      "startSelected": "start-post",
+      "endDate": new Date(),
+      "endSelected": "end-date"
+    };
 numberDaysTotal = 1;
 currentDay = 1; //The day that is selected by the user
 nightfallTime = 2000; //Default time for nightfall
+timeZone = 0;
 isTallyPopout = false;
 
 $(document).ready(function () {
   threadId = getThreadId();
   threadScriptMode = parseInt(localStorage.getItem("threadScriptMode" + threadId));
+  timeZone = getTimeZone();
   $("<div />", {
     id: "script-manager"
   })
@@ -577,6 +581,9 @@ function createInterface() {
       text: "Pop out"
     }))))
     .append($("<br />"))
+    .append($("<div />", {
+      id: "day-ranges"
+    })
     .append($("<span />", {
       text: "Start"
     }))
@@ -590,18 +597,15 @@ function createInterface() {
     })
     .append($("<button />", {
       class: "input-button",
-      id: "start-year",
-      text: "2016"
+      id: "start-year"
     }))
     .append($("<button />", {
       class: "input-button",
-      id: "start-month",
-      text: "08"
+      id: "start-month"
     }))
     .append($("<button />", {
       class: "input-button",
-      id: "start-day",
-      text: "24"
+      id: "start-day"
     }))
     .append($("<button />", {
       id: "start-time",
@@ -615,10 +619,26 @@ function createInterface() {
       id: "end-post",
       class: "boundary-option input-button edit-button"
     }))
+    .append($("<div />", {
+      class: "boundary-option",
+      id: "end-date"
+    })
+    .append($("<button />", {
+      class: "input-button",
+      id: "end-year"
+    }))
+    .append($("<button />", {
+      class: "input-button",
+      id: "end-month"
+    }))
+    .append($("<button />", {
+      class: "input-button",
+      id: "end-day"
+    }))
     .append($("<button />", {
       id: "end-time",
-      class: "boundary-option input-button edit-button"
-    }))
+      class: "input-button edit-button"
+    }))))
     .appendTo("#fmu-main-container");
   $("<div />", {
     id: "toggle-game-configuration-container"
@@ -759,8 +779,14 @@ function createInterface() {
     switchDay($(this).attr("name"));
   });
   $("#start-post").click(switchStartPost);
-  $("#start-time").click(switchStartTime)
+  $("#start-year").click(switchStartYear);
+  $("#start-month").click(switchStartMonth);
+  $("#start-day").click(switchStartDay);
+  $("#start-time").click(switchStartTime);
   $("#end-post").click(switchEndPost);
+  $("#end-year").click(switchEndYear);
+  $("#end-month").click(switchEndMonth);
+  $("#end-day").click(switchEndDay);
   $("#end-time").click(switchEndTime);
   $("#add-gm").click(promptAddGm);
   $("#gm-names").on("click", ".gm-name", function() {
@@ -871,8 +897,7 @@ function switchStartPost() {
   colourDayTab(currentDay);  
 }
 
-function switchStartTime() {
-  var post;
+function switchStartDate() {
   if (!dayDataList[currentDay]) {
     dayDataList[currentDay] = {};
   }
@@ -880,6 +905,74 @@ function switchStartTime() {
   localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
   switchDay(currentDay);
   colourDayTab(currentDay);
+}
+
+function switchStartYear() {
+  if (dayDataList[currentDay]["startSelected"] == "start-date") {
+    var year = parseInt(prompt("Enter new year"));
+    if (year > 0) {
+      var newDate = new Date(dayDataList[currentDay]["startDate"]);
+      newDate = getOffsetDate(newDate, 0, timeZone);
+      newDate.setUTCFullYear(year);
+      dayDataList[currentDay]["startDate"] = getOffsetDate(newDate, 0, -timeZone);
+      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+      switchDay(currentDay);
+    }
+  } else {
+    switchStartDate();
+  }
+}
+
+function switchStartMonth() {
+  if (dayDataList[currentDay]["startSelected"] == "start-date") {
+    var month = parseInt(prompt("Enter new month"));
+    if (month > 0 && month <= 12) {
+      var newDate = new Date(dayDataList[currentDay]["startDate"]);
+      newDate = getOffsetDate(newDate, 0, timeZone);
+      newDate.setUTCMonth(month - 1);
+      dayDataList[currentDay]["startDate"] = getOffsetDate(newDate, 0, -timeZone);
+      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+      switchDay(currentDay);
+    }
+  } else {
+    switchStartDate();
+  }
+}
+
+function switchStartDay() {
+  if (dayDataList[currentDay]["startSelected"] == "start-date") {
+    var day = parseInt(prompt("Enter new day"));
+    if (day > 0 && day <= 31) {
+      var newDate = new Date(dayDataList[currentDay]["startDate"]);
+      newDate = getOffsetDate(newDate, 0, timeZone);
+      newDate.setUTCDate(day);
+      dayDataList[currentDay]["startDate"] = getOffsetDate(newDate, 0, -timeZone);
+      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+      switchDay(currentDay);
+    }
+  } else {
+    switchStartDate();
+  }
+}
+
+function switchStartTime() {
+  if (dayDataList[currentDay]["startSelected"] == "start-date") {
+    var time = prompt("Enter new time");
+    var actualTime = validateTime(time);
+    if (actualTime > -1) {
+      var hours = Math.floor(actualTime / 100);
+      var minutes = actualTime % 100;
+      var newDate = new Date(dayDataList[currentDay]["startDate"]);
+      newDate = getOffsetDate(newDate, 0, timeZone);
+      newDate.setUTCHours(hours);
+      newDate.setUTCMinutes(minutes);
+      dayDataList[currentDay]["startDate"] = getOffsetDate(newDate, 0, -timeZone);
+      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+      switchDay(currentDay);
+    }
+  } else {
+    switchStartDate();
+  }
 }
 
 function switchEndPost() {
@@ -904,15 +997,83 @@ function switchEndPost() {
   colourDayTab(currentDay);  
 }
 
-function switchEndTime() {
+function switchEndDate() {
   var post;
   if (!dayDataList[currentDay]) {
     dayDataList[currentDay] = {};
   }
-  dayDataList[currentDay]["endSelected"] = "end-time";
+  dayDataList[currentDay]["endSelected"] = "end-date";
   localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
   switchDay(currentDay);
   colourDayTab(currentDay);
+}
+
+function switchEndYear() {
+  if (dayDataList[currentDay]["endSelected"] == "end-date") {
+    var year = parseInt(prompt("Enter new year"));
+    if (year > 0) {
+      var newDate = new Date(dayDataList[currentDay]["endDate"]);
+      newDate = getOffsetDate(newDate, 0, timeZone);
+      newDate.setUTCFullYear(year);
+      dayDataList[currentDay]["endDate"] = getOffsetDate(newDate, 0, -timeZone);
+      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+      switchDay(currentDay);
+    }
+  } else {
+    switchEndDate();
+  }
+}
+
+function switchEndMonth() {
+  if (dayDataList[currentDay]["endSelected"] == "end-date") {
+    var month = parseInt(prompt("Enter new month"));
+    if (month > 0 && month <= 12) {
+      var newDate = new Date(dayDataList[currentDay]["endDate"]);
+      newDate = getOffsetDate(newDate, 0, timeZone);
+      newDate.setUTCMonth(month - 1);
+      dayDataList[currentDay]["endDate"] = getOffsetDate(newDate, 0, -timeZone);
+      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+      switchDay(currentDay);
+    }
+  } else {
+    switchEndDate();
+  }
+}
+
+function switchEndDay() {
+  if (dayDataList[currentDay]["endSelected"] == "end-date") {
+    var day = parseInt(prompt("Enter new day"));
+    if (day > 0 && day <= 31) {
+      var newDate = new Date(dayDataList[currentDay]["endDate"]);
+      newDate = getOffsetDate(newDate, 0, timeZone);
+      newDate.setUTCDate(day);
+      dayDataList[currentDay]["endDate"] = getOffsetDate(newDate, 0, -timeZone);
+      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+      switchDay(currentDay);
+    }
+  } else {
+    switchEndDate();
+  }
+}
+
+function switchEndTime() {
+  if (dayDataList[currentDay]["endSelected"] == "end-date") {
+    var time = prompt("Enter new time");
+    var actualTime = validateTime(time);
+    if (actualTime > -1) {
+      var hours = Math.floor(actualTime / 100);
+      var minutes = actualTime % 100;
+      var newDate = new Date(dayDataList[currentDay]["endDate"]);
+      newDate = getOffsetDate(newDate, 0, timeZone);
+      newDate.setUTCHours(hours);
+      newDate.setUTCMinutes(minutes);
+      dayDataList[currentDay]["endDate"] = getOffsetDate(newDate, 0, -timeZone);
+      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+      switchDay(currentDay);
+    }
+  } else {
+    switchEndDate();
+  }
 }
 
 function promptAddGm() {
@@ -977,6 +1138,18 @@ function editPlayerName(oldName, newName) {
   }
 }
 
+function getTimeString(date) {
+  var hours = date.getUTCHours() + "";
+  var minutes = date.getUTCMinutes() + "";
+  if (hours.length == 1) {
+    hours = "0" + hours;
+  }
+  if (minutes.length == 1) {
+    minutes = "0" + minutes;
+  }
+  return hours + ":" + minutes;
+}
+
 function getLifeStatus(state) {
   if (state == 0) {
     return "alive";
@@ -1011,10 +1184,14 @@ function switchDay(day) {
     } else {
       $("#start-post").text("Post #?");
     }
+    var startTime = getOffsetDate(new Date(dayDataList[day]["startDate"]), 0, timeZone);
+    $("#start-year").text(startTime.getUTCFullYear());
+    $("#start-month").text(startTime.getUTCMonth() + 1);
+    $("#start-day").text(startTime.getUTCDate());
+    $("#start-time").text(getTimeString(startTime));
     if (dayDataList[day]["startSelected"]) {
       $("#" + dayDataList[day]["startSelected"]).addClass("boundary-option-selected");
     }
-    $("#start-time").text(padTime(nightfallTime + 1));
     if (dayDataList[day]["endSelected"]) {
       $("#" + dayDataList[day]["endSelected"]).addClass("boundary-option-selected");
     }
@@ -1023,8 +1200,13 @@ function switchDay(day) {
     } else {
       $("#end-post").text("Post #?");
     }
-    $("#end-time").text(padTime(nightfallTime));
+    var endTime = getOffsetDate(new Date(dayDataList[day]["endDate"]), 0, timeZone);
+    $("#end-year").text(endTime.getUTCFullYear());
+    $("#end-month").text(endTime.getUTCMonth() + 1);
+    $("#end-day").text(endTime.getUTCDate());
+    $("#end-time").text(getTimeString(endTime));
   } else {
+    alert("Error");
     $(".boundary-option").removeClass("boundary-option-selected");
     $("#start-post").text("Post #?");
     $("#start-time").text(padTime(nightfallTime + 1));
@@ -1077,11 +1259,15 @@ function updateTally() {
   }
   var start = 1;
   var end = 200000;
-  if (dayDataList[currentDay] && dayDataList[currentDay]["startSelected"] == "start-post") {
+  if (dayDataList[currentDay]["startSelected"] == "start-post") {
     start = parseInt(dayDataList[currentDay]["startPost"]);
+  } else if (dayDataList[currentDay]["startSelected"] == "start-date") {
+    start = dayDataList[currentDay]["startDate"];
   }
   if (dayDataList[currentDay] && dayDataList[currentDay]["endSelected"] == "end-post") {
     end = parseInt(dayDataList[currentDay]["endPost"]);
+  } else if (dayDataList[currentDay]["endSelected"] == "end-date") {
+    end = dayDataList[currentDay]["endDate"];
   }
   var tally = getTallyForRange(start, end);
   savedTallyList[currentDay] = tally;
@@ -1183,6 +1369,13 @@ function changeDayCount(change) {
   if (change > 0) {
     numberDaysTotal++;
     addDayTabGui(numberDaysTotal);
+    dayDataList[numberDaysTotal] = {
+      "startDate": new Date(),
+      "startPost": "1",
+      "startSelected": "start-post",
+      "endDate": new Date(),
+      "endSelected": "end-date"
+    };
     colourDayTab(numberDaysTotal);
     switchDay(numberDaysTotal);
   } else {
@@ -1282,29 +1475,59 @@ function getVoteTarget(vote) {
   }
 }
 
+function compareDates(a, b) {
+  var date1 = new Date(a).getTime();
+  var date2 = new Date(b).getTime();
+  if (date1 == date2) {
+    return 0;
+  } else if (date1 > date2) {
+    return 1;
+  } else {
+    return -1;
+  }
+}
+
 function getTallyForRange(start, end) {
   parseAllVotes();
   var playerVotes = {};
   var totalVotes = {};
   Object.keys(recognisedVoteList).forEach(function(post) {
     post = parseInt(post);
-    if (post >= start && post <= end) {
-      var vote = recognisedVoteList[post];
-      var type = vote["type"];
-      if (!playerVotes[vote["user"]]) {
-        if (playerNameList.length > 0 && $.inArray(vote["user"], playerNameList) == -1) {
-          registerUnrecognisedVoter(vote["user"]);
-        }
-        playerVotes[vote["user"]] = {};
+    if (typeof start === "string" || start instanceof Date) {
+      start = new Date(start);
+      if (compareDates(start, recognisedVoteList[post]["time"]) > 0) {
+        return;
       }
-      if (!playerVotes[vote["user"]]["post"] || parseInt(post) > playerVotes[vote["user"]]["post"]) {
-        playerVotes[vote["user"]]["post"] = post;
-        playerVotes[vote["user"]]["link"] = vote["link"];
-        if (type == 2 || type == 1) {
-          playerVotes[vote["user"]]["target"] = vote["target"];
-        } else if (type == -1) {
-          playerVotes[vote["user"]]["target"] = "";
-        }
+    } else {
+      if (start > post) {
+        return;
+      }
+    }
+    if (typeof end === "string" || end instanceof Date) {
+      end = new Date(end);
+      if (compareDates(end, recognisedVoteList[post]["time"]) < 0) {
+        return;
+      }
+    } else {
+      if (end < post) {
+        return;
+      }
+    }
+    var vote = recognisedVoteList[post];
+    var type = vote["type"];
+    if (!playerVotes[vote["user"]]) {
+      if (playerNameList.length > 0 && $.inArray(vote["user"], playerNameList) == -1) {
+        registerUnrecognisedVoter(vote["user"]);
+      }
+      playerVotes[vote["user"]] = {};
+    }
+    if (!playerVotes[vote["user"]]["post"] || parseInt(post) > playerVotes[vote["user"]]["post"]) {
+      playerVotes[vote["user"]]["post"] = post;
+      playerVotes[vote["user"]]["link"] = vote["link"];
+      if (type == 2 || type == 1) {
+        playerVotes[vote["user"]]["target"] = vote["target"];
+      } else if (type == -1) {
+        playerVotes[vote["user"]]["target"] = "";
       }
     }
   });
@@ -1780,12 +2003,12 @@ function parseDateFromString(string) {
   date.setUTCMinutes(minutes);
   var dateToday = new Date();
   if (stringArr[0] == "Today") {
-    var relativeDate = getOffsetDate(dateToday, 0, getTimeZone());
+    var relativeDate = getOffsetDate(dateToday, 0, timeZone);
     date.setUTCFullYear(relativeDate.getUTCFullYear());
     date.setUTCMonth(relativeDate.getUTCMonth());
     date.setUTCDate(relativeDate.getUTCDate());
   } else if (stringArr[0] == "Yesterday") {
-    var relativeDate = getOffsetDate(dateToday, -1, getTimeZone()); //Get yesterday's date in current time zone
+    var relativeDate = getOffsetDate(dateToday, -1, timeZone); //Get yesterday's date in current time zone
     date.setUTCFullYear(relativeDate.getUTCFullYear());
     date.setUTCMonth(relativeDate.getUTCMonth());
     date.setUTCDate(relativeDate.getUTCDate());
@@ -1797,7 +2020,7 @@ function parseDateFromString(string) {
     date.setUTCMonth(month);
     date.setUTCFullYear(parseInt(dateArr[2]));
   }
-  date = getOffsetDate(date, 0, -getTimeZone()); //Converting to UTC time
+  date = getOffsetDate(date, 0, -timeZone); //Converting to UTC time
   return date;
 }
 
