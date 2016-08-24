@@ -85,13 +85,13 @@ GM_addStyle(`
 .full-data-day:hover {
   background-color: var(--dark-color-highlighted);
 }
-.partial-data-day {
+.day-tab.partial-data-day {
   background-color: var(--med-color);
 }
 .partial-data-day:hover {
   background-color: var(--med-color-highlighted);
 }
-.empty-data-day {
+.day-tab.empty-data-day {
   background-color: var(--light-color);
 }
 .empty-data-day:hover {
@@ -107,9 +107,9 @@ GM_addStyle(`
   text-decoration: none;
   min-width: 18px;
 }
-.page-selected, .day-tabed {
+.page-selected, .day-selected {
   padding-bottom: 2px !important;
-  border-bottom: 3px solid var(--dark-contrast-color);
+  border-bottom: 3px solid var(--dark-contrast-color) !important;
 }
 #page-label {
   background-color: var(--dark-contrast-color);
@@ -148,8 +148,8 @@ GM_addStyle(`
   background-color: #546e7a;
 }
 .day-tab {
-  -moz-transition-duration: 0.5s;
-  -webkit-transition-duration: 0.5s;
+  -moz-transition: background-color 0.5s;
+  -webkit-transition: background-color 0.5s;
   cursor: pointer;
   display: inline-block;
   padding: 5px 10px;
@@ -663,7 +663,7 @@ function createInterface() {
         $(".player-block[name='" + playerNameList[i] + "'] .player-state").text(getLifeStatus(playerStatus));
         $(".player-block[name='" + playerNameList[i] + "'] .death-phase").text(getPhaseName(playerStatus));
         $(".player-block[name='" + playerNameList[i] + "'] .death-time").text(getDeathTime(playerStatus));
-        if (playerStatusList[playerNameList[i]] == -1) {
+        if (playerStatusList[playerNameList[i]] == 0) {
           playerEle.addClass("alive-player");
         } else {
           playerEle.addClass("dead-player");
@@ -881,10 +881,10 @@ function createInterface() {
       $(this).closest(".player-block").find(".death-time").text(currentDay);
       
     } else {
-      playerStatusList[$(this).parent().attr("name")] = -1;
+      playerStatusList[$(this).parent().attr("name")] = 0;
       localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
       $(this).closest(".player-block").removeClass("dead-player").addClass("alive-player");
-      $(this).text(getLifeStatus(-1));
+      $(this).text(getLifeStatus(0));
     }
   });
   $("#player-list").on("click", ".death-phase", function() {
@@ -969,10 +969,12 @@ function editPlayerName(oldName, newName) {
 }
 
 function getLifeStatus(state) {
-  if (state == -1) {
+  if (state == 0) {
     return "alive";
-  } else {
+  } else if (state > 0) {
     return "dead";
+  } else {
+    return "resurrected";
   }
 }
 
@@ -991,8 +993,8 @@ function getDeathTime(state) {
 function switchDay(day) {
   currentDay = day;
   localStorage.setItem("selectedDay" + threadId, day);
-  $(".day-tab").removeClass("day-tabed");
-  $(".day-tab[name='" + day + "']").addClass("day-tabed");
+  $(".day-tab").removeClass("day-selected");
+  $(".day-tab[name='" + day + "']").addClass("day-selected");
   if (dayDataList[day]) {
     $(".boundary-option").removeClass("boundary-option-selected");
     if (dayDataList[day]["startPost"]) {
@@ -1084,6 +1086,7 @@ function combinedData() {
   var combinedData = {};
   $(".full-save, .partial-save").each(function() {
     pg = $(this).text();
+    //This 'concatenates' two objects
     jQuery.extend(combinedData, getPageData(pg));
   });
   return combinedData;
@@ -1092,10 +1095,7 @@ function combinedData() {
 function parseAllVotes() {
   var fulldata = combinedData();
   Object.keys(fulldata).forEach(function(post) {
-    var raw = "";
-    Object.keys(fulldata[post]["v"]).forEach(function(vote) {
-      raw += fulldata[post]["v"][vote];
-    });
+    var raw = fulldata[post]["r"];
     var voteType = getVoteType(raw);
     var voteTarget = getVoteTarget(raw);
     if (voteType != 0) {
@@ -1177,7 +1177,7 @@ function getTallyForRange(start, end) {
     }
   });
   for (var i in playerNameList) {
-    if (playerStatusList[playerNameList[i]] != -1 && playerStatusList[playerNameList[i]] < currentDay * 2) {
+    if (playerStatusList[playerNameList[i]] != 0 && playerStatusList[playerNameList[i]] < currentDay * 2) {
       continue;
     }
     if (!playerVotes.hasOwnProperty(playerNameList[i])) {
@@ -1632,39 +1632,62 @@ function getPageData(page) {
   return JSON.parse(localStorage.getItem("pageData" + threadId + "-" + page));
 }
 
+function getPostUsername(post) {
+  return post.find(".alt2 .bigusername").text();
+}
+
+function getPostTime(post) {
+  return post.find(".thead").first().text().trim();
+}
+
+function getPostBody(post) {
+  return post.find(".alt1 > div");
+}
+
+function getPostBoldText(post) {
+  return post.find(".alt1 > div > b");
+}
+
+function getPostId(post) {
+  return post.find(".thead > [id^=postcount]").attr("id").replace("postcount","");
+}
+
+function getPostNumber(post) {
+  return post.find(".thead > [id^=postcount]").attr("name");
+}
+
 function generateData() {
   var data = {};
-  $("#posts").find(".page").each(function (i) {
-    var username = $(this).find(".alt2 .bigusername").text();
-    if ($(this).find("[id^='post_message_'] > b").length > 0 || (includeGm && $.inArray(username, gmNameList) > -1)) {
+  $("#posts").find(".page").each(function () {
+    var username = getPostUsername($(this));
+    var boldPost = getPostBoldText($(this));
+    if (boldPost.length > 0 || (includeGm && $.inArray(username, gmNameList) > -1)) {
       if ($.inArray(username, ignoredPlayerList) > -1 || !includeGm && $.inArray(username, gmNameList) > -1) {
         return true;
       }
-      var votingData = {};
-      var i = 0;
-      if (!includeGm || $.inArray(username, gmNameList) > -1) {
-        $(this).find(".alt1 > div > b").each(function () {
+      var boldedContent = "";
+      if (!includeGm || $.inArray(username, gmNameList) == -1) {
+        boldPost.each(function () {
           var content = $(this).html().replace(/(['"])/g, '\\$1').replace(/\n/g, ' ').trim().toLowerCase();
           if (content.indexOf(voteKeyword) >= 0 || content.indexOf(unvoteKeyword) >= 0) {
-            votingData[i] = content;
-            i++;
+            boldedContent += content;
           }
         });
-        if (jQuery.isEmptyObject(votingData)) {
+        if (boldedContent.length == 0) {
           return true;
         }
-        postData = {
+        var postData = {
           "u": username, //User
-          "t": $(this).find(".thead:first").text().trim(), //Time
-          "v": votingData, //Voting candidates
-          "l": $(this).find(".thead > [id^=postcount]").attr("id").replace("postcount","")
+          "t": getPostTime($(this)), //Time
+          "r": boldedContent, //Raw vote: Parts of post that involve voting
+          "l": getPostId($(this)) //Used to link to post
         };
       } else {
         //Post content
-        postData.c = $(this).find("[id^='post_message_']").html().replace(/(['"])/g, '\\$1').replace(/\n/g, " ").trim();
+        postData.c = getPostContent($(this)).html().replace(/(['"])/g, '\\$1').replace(/\n/g, " ").trim();
       }
       //Post number
-      data[$(this).find(".thead > [id^=postcount]").attr("name")] = postData;
+      data[getPostNumber($(this))] = postData;
     }
   });
   if (currentPage > 0 && threadId > 0) {
