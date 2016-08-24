@@ -341,6 +341,21 @@ li.player-block:hover .player-controls {
   display: inline;
 }`);
 
+monthNames = {
+    "jan": 0,
+    "feb": 1,
+    "mar": 2,
+    "apr": 3,
+    "may": 4,
+    "jun": 5,
+    "jul": 6,
+    "aug": 7,
+    "sep": 8,
+    "oct": 9,
+    "nov": 10,
+    "dec": 11
+  }
+
 /*Represents script mode for the current thread
   0 - Off
   1 - On, game configuration is hidden
@@ -586,7 +601,7 @@ function createInterface() {
     .append($("<button />", {
       class: "input-button edit-button",
       id: "nightfall-time",
-      text: nightfallTime
+      text: padTime(nightfallTime)
     }))
     .append($("<br />"))
     .append($("<span />", {
@@ -821,10 +836,11 @@ function createInterface() {
   });
   $("#nightfall-time").click(function() {
     nightfallTime = prompt("Enter new time for night");
-    $(this).text(nightfallTime);
-    if (nightfallTime) {
+    nightfallTime = validateTime(nightfallTime);
+    if (nightfallTime > -1) {
+      $(this).text(padTime(nightfallTime));
       localStorage.setItem("nightfallTime" + threadId, nightfallTime);
-      nightfallTime = parseInt(nightfallTime);
+      switchDay(currentDay);
     }
   });
   $("#add-player").click(function() {
@@ -1005,7 +1021,7 @@ function switchDay(day) {
     if (dayDataList[day]["startSelected"]) {
       $("#" + dayDataList[day]["startSelected"]).addClass("boundary-option-selected");
     }
-    $("#start-time").text(nightfallTime + 1);
+    $("#start-time").text(padTime(nightfallTime + 1));
     if (dayDataList[day]["endSelected"]) {
       $("#" + dayDataList[day]["endSelected"]).addClass("boundary-option-selected");
     }
@@ -1014,13 +1030,13 @@ function switchDay(day) {
     } else {
       $("#end-post").text("Post #?");
     }
-    $("#end-time").text(nightfallTime);
+    $("#end-time").text(padTime(nightfallTime));
   } else {
     $(".boundary-option").removeClass("boundary-option-selected");
     $("#start-post").text("Post #?");
-    $("#start-time").text(nightfallTime + 1);
+    $("#start-time").text(padTime(nightfallTime + 1));
     $("#end-post").text("Post #?");
-    $("#end-time").text(nightfallTime);
+    $("#end-time").text(padTime(nightfallTime));
   }
   if (savedTallyList[day]) {
     $("#tally-body").html(tallyToHtml(savedTallyList[day]));
@@ -1068,7 +1084,7 @@ function changeDayCount(change) {
 
 function colourDayTab(day) {
   var dayTab = $(".day-tab[name='" + day + "']");
-  dayTab.removeClass("partial-data-day").removeClass("full-data-day").removeClass("empty-data-day");
+  dayTab.removeClass("partial-data-day full-data-day empty-data-day");
   if (dayDataList[day]) {
     if (dayDataList[day]["startSelected"] && dayDataList[day]["endSelected"]) {
       dayTab.addClass("full-data-day")
@@ -1586,25 +1602,86 @@ function getLowerCase(string) {
   return result;
 }
 
-function parseDataFromString(string) {
-  string = string.replace(/,/g, "");
-  if (string.indexOf("Today") >= 0) {
-    string = string.replace("Today", "");
-  } else if (string.indexOf("Yesterday") >= 0) {
-    string = string.replace("Yesterday", "");
-  } else {
-    var arr = string.split(" ");
-    var month = arr[1];
-    var day = arr[2].replace("s","").replace("t","").replace("h","").replace("r","").replace("n","").replace("d","");
-    var year = arr[3];
-    var time = arr[4]
-    time = time.split(":");
-    var hour = time[0];
-    var minutes = time[1];
-    if (arr[5] == "PM") {
-      hour += 12;
+function validateTime(time) {
+  var validTime = parseInt(time.replace(":","").replace(" ","").replace("h","").replace(".",""));
+  if (validTime >= 100) {
+    var hour = Math.floor(validTime / 100);
+    var minute = validTime % 100;
+    if (minute < 60) {
+      if (hour < 24) {
+        if (hour <= 11 && time.toLowerCase().indexOf("pm") >= 0) {
+          return validTime + 1200;
+        } else if (hour >= 12 && time.toLowerCase().indexOf("am") >= 0) {
+          return validTime - 1200;
+        } else {
+          return validTime;
+        }
+      }
+    }
+  } else if (validTime < 24) {
+    if (validTime <= 11 && time.toLowerCase().indexOf("pm") >= 0) {
+      return (validTime + 12) * 100;
+    } else if (validTime >= 12 && time.toLowerCase().indexOf("am") >= 0) {
+      return (validTime - 12) * 100;
+    } else {
+      return validTime * 100;
     }
   }
+  return -1;
+}
+
+function padTime(time) {
+  var paddedTime = time + "";
+  while (paddedTime.length < 4) {
+    paddedTime = "0" + paddedTime;
+  }
+  return paddedTime;
+}
+
+function getTimeZone() {
+  var timeString = $("div.page div.smallfont").last().text(); //Gets string at bottom which tells time zone
+  timeString = timeString.split("GMT")[1].split(". ")[0]; //Get between "GMT " and ". "
+  return parseFloat(timeString.replace("+","").trim());
+}
+
+function getOffsetDate(date, days, hours) {
+  return new Date(date.getTime() + (days * 24 + hours) * 60 * 60 * 1000);
+}
+
+function parseDateFromString(string) {
+  string = string.replace(/,/g, "");
+  var date = new Date();
+  var stringArr = string.split(" ");
+  var timeArr = stringArr.slice(-2);
+  var time = timeArr[0].split(":");
+  var hours = parseInt(time[0]);
+  var minutes = parseInt(time[1]);
+  if (timeArr[1] == "PM") {
+    hours += 12;
+  }
+  date.setUTCHours(hours);
+  date.setUTCMinutes(minutes);
+  var dateToday = new Date();
+  if (stringArr[0] == "Today") {
+    var relativeDate = getOffsetDate(dateToday, 0, getTimeZone());
+    date.setUTCFullYear(relativeDate.getUTCFullYear());
+    date.setUTCMonth(relativeDate.getUTCMonth());
+    date.setUTCDate(relativeDate.getUTCDate());
+  } else if (stringArr[0] == "Yesterday") {
+    var relativeDate = getOffsetDate(dateToday, -1, getTimeZone()); //Get yesterday's date in current time zone
+    date.setUTCFullYear(relativeDate.getUTCFullYear());
+    date.setUTCMonth(relativeDate.getUTCMonth());
+    date.setUTCDate(relativeDate.getUTCDate());
+  } else {
+    var dateArr = stringArr.slice(1, -2);
+    var month = monthNames[dateArr[0].toLowerCase()];
+    var day = parseInt(dateArr[1].replace("s","").replace("t","").replace("h","").replace("r","").replace("n","").replace("d",""));
+    date.setUTCDate(day);
+    date.setUTCMonth(month);
+    date.setUTCFullYear(parseInt(dateArr[2]));
+  }
+  date = getOffsetDate(date, 0, -getTimeZone()); //Converting to UTC time
+  return date;
 }
 
 function getThreadId() {
@@ -1668,9 +1745,9 @@ function generateData() {
       var boldedContent = "";
       if (!includeGm || $.inArray(username, gmNameList) == -1) {
         boldPost.each(function () {
-          var content = $(this).html().replace(/(['"])/g, '\\$1').replace(/\n/g, ' ').trim().toLowerCase();
+          var content = $(this).html().replace(/(['"])/g, '\\$1').replace(/\n/g, " ").toLowerCase();
           if (content.indexOf(voteKeyword) >= 0 || content.indexOf(unvoteKeyword) >= 0) {
-            boldedContent += content;
+            boldedContent += content.trim();
           }
         });
         if (boldedContent.length == 0) {
@@ -1678,7 +1755,7 @@ function generateData() {
         }
         var postData = {
           "u": username, //User
-          "t": getPostTime($(this)), //Time
+          "t": parseDateFromString(getPostTime($(this))), //Time
           "r": boldedContent, //Raw vote: Parts of post that involve voting
           "l": getPostId($(this)) //Used to link to post
         };
@@ -1693,9 +1770,7 @@ function generateData() {
   if (currentPage > 0 && threadId > 0) {
     localStorage.setItem("pageStatus" + threadId + "-" + currentPage, numberPostsOnPage + "");
     localStorage.setItem("pageData" + threadId + "-" + currentPage, JSON.stringify(data));
-    $(".page-link[page='" + currentPage + "']").removeClass("partial-save").removeClass("empty-save").addClass("full-save");
-  } else {
-    console.log("Could not save data - page is " + currentPage + " and thread id is " + threadId);
+    $(".page-link[page='" + currentPage + "']").removeClass("partial-save empty-save").addClass("full-save");
   }
 }
 
