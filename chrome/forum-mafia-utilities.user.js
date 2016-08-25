@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name        Forum Mafia Utilities
-// @namespace   lrdwhyt
+// @namespace  lrdwhyt
 // @description Number of added functionalities to make playing forum mafia easier. Designed for Forums of Loathing.
-// @include     http://forums.kingdomofloathing.com/vb/showthread.php?*
-// @version     1
+// @include    http://forums.kingdomofloathing.com/vb/showthread.php?*
+// @version    1
 // ==/UserScript==
 
 /*Represents script mode for the current thread
@@ -15,8 +15,8 @@ numberPostsPerPage = 60; //Maximum number of posts per page - Forum default is 6
 ignoredPlayerList = ["TallyBot"]; //Usernames to ignore when retrieving data
 nightKeywords = ["lynch", "kill", "day", "night", "someone", "die"]; //List of words associated with night posts (unimplemented)
 includeGm = false; //Whether to include the GM when retrieving data
-unvoteKeyword = "unvote"; //String used to signify unvote
-voteKeyword = "vote"; //String used to signify vote
+unvoteKeyword = "unvote:"; //String used to signify unvote
+voteKeyword = "vote:"; //String used to signify vote
 gmNameList = [];
 playerNameList = [];
 subNameList = {};
@@ -899,20 +899,23 @@ function tallyToBbcode(tally) {
     return tally[b].length - tally[a].length;
   }).forEach(function(target) {
     var voterList = [];
+    bbcode += "[b]" + target + " (" + tally[target].length + ")[/b] - [size=1]"
     for (var voter in tally[target]) {
-      voterList.push(tally[target][voter][0]);
+        bbcode += tally[target][voter][0];
+        bbcode += "(#[post=\""+tally[target][voter][2]+"\"]"+tally[target][voter][1]+"[/post]) ";
     }
-    bbcode += "[b]" + target + " (" + tally[target].length + ")[/b] - " + voterList.join(", ") + "\n";
+    bbcode += "[/size]\n";
   });
   if (tally.hasOwnProperty("")) {
     var voterList = [];
     for (var i in tally[""]) {
       voterList.push(tally[""][i][0]);
     }
-    bbcode += "[b]Yet to vote (" + voterList.length + ")[/b] - " + voterList.join(", ");
+    bbcode += "[b]Yet to vote (" + voterList.length + ")[/b] - [size=1]" + voterList.join(", ") + "[/size]";
   }
   return bbcode;
 }
+    
 
 function tallyToHtml(tally) {
   var html = "";
