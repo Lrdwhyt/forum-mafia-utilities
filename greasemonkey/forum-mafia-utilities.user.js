@@ -268,7 +268,7 @@ GM_addStyle(`
   padding-bottom: 6px;
 }
 #day-ranges .input-button:hover {
-  border-color: #f5f5f5;
+  border-color: #f5f5f5 !important;
 }
 #day-ranges .boundary-option-selected {
   border-color: var(--dark-contrast-color) !important;
@@ -405,23 +405,23 @@ currentPage = 0;
 pageTotal = 0;
 numberPostsOnPage = 0;
 dayDataList = {};
-dayDataList[1] = {
-      "startDate": new Date(),
-      "startPost": "1",
-      "startSelected": "start-post",
-      "endDate": new Date(),
-      "endSelected": "end-date"
-    };
 numberDaysTotal = 1;
 currentDay = 1; //The day that is selected by the user
 nightfallTime = 2000; //Default time for nightfall
 timeZone = 0;
 isTallyPopout = false;
+scriptSettings = {
+  "bbcodePostNumbers": 0 //BBcode post numbers
+}
 
 $(document).ready(function () {
   threadId = getThreadId();
   threadScriptMode = parseInt(localStorage.getItem("threadScriptMode" + threadId));
   timeZone = getTimeZone();
+  initialiseDayData(1);
+  if (localStorage.getItem("fmuSettings")) {
+    scriptSettings = JSON.parse(localStorage.getItem("fmuSettings"));
+  }
   $("<div />", {
     id: "script-manager"
   })
@@ -450,6 +450,14 @@ $(document).ready(function () {
     .append($("<div />", {
       id: "settings-display"
     })
+      .append($("<span />", {
+        text: "BBcode post numbers"
+      }))
+      .append($("<button />", {
+        class: "function-button",
+        id: "toggle-bbcode-post-numbers",
+        text: "Off"
+      }))
       .append($("<div />", {
         id: "memory-usage",
         text: "Local memory: ~" + Math.round(unescape(encodeURIComponent(JSON.stringify(localStorage))).length * 2 / 1024 / 1024 * 10000) / 10000 + " MB used of 5 MB"
@@ -473,12 +481,30 @@ $(document).ready(function () {
       resetScript();
     }
   });
+  $("#toggle-bbcode-post-numbers").click(function() {
+    toggleBbcodePostNumbers($(this));
+  });
+  if (scriptSettings["bbcodePostNumbers"]) {
+      $("#toggle-bbcode-post-numbers").text("On");
+    }
   if (threadScriptMode) {
     createInterface();
   } else {
     resetScript();
   }
 });
+
+function toggleBbcodePostNumbers(toggleButton) {
+  if (scriptSettings["bbcodePostNumbers"] == 0) {
+    scriptSettings["bbcodePostNumbers"] = 1;
+    localStorage.setItem("fmuSettings", JSON.stringify(scriptSettings));
+    toggleButton.text("On");
+  } else {
+    scriptSettings["bbcodePostNumbers"] = 0;
+    localStorage.setItem("fmuSettings", JSON.stringify(scriptSettings));
+    toggleButton.text("Off");
+  }
+}
 
 function getCurrentPageNumbers() {
   var pageString = $(".pagenav td.vbmenu_control:first-child").first().text();
@@ -488,8 +514,7 @@ function getCurrentPageNumbers() {
   numberPostsOnPage = 1 + parseInt($(".thead > [id^=postcount]").last().attr("name")) - parseInt($(".thead > [id^=postcount]").first().attr("name"));
 }
 
-function createInterface() {
-  getCurrentPageNumbers();
+function loadLocalData() {
   if (localStorage.getItem("dayCount" + threadId)) {
     numberDaysTotal = parseInt(localStorage.getItem("dayCount" + threadId));
   }
@@ -524,6 +549,11 @@ function createInterface() {
   if (localStorage.getItem("unrecognisedVoterList" + threadId)) {
     unrecognisedVoterList = JSON.parse(localStorage.getItem("unrecognisedVoterList" + threadId));
   }
+}
+
+function createInterface() {
+  getCurrentPageNumbers();
+  loadLocalData();
   $("#script-manager").before("<div id='fmu-main-container'></div>");
   $("<div />", {
     id: "page-container"
@@ -847,6 +877,16 @@ function createInterface() {
   if (gmNameList.length > 0) {
     generateData();
   }
+}
+
+function initialiseDayData(day) {
+  dayDataList[day] = {
+    "startDate": new Date(),
+    "startPost": "1",
+    "startSelected": "start-post",
+    "endDate": new Date(),
+    "endSelected": "end-date"
+  };
 }
 
 function updatePlayerState(playerBlock, playerName) {
@@ -1369,13 +1409,8 @@ function changeDayCount(change) {
   if (change > 0) {
     numberDaysTotal++;
     addDayTabGui(numberDaysTotal);
-    dayDataList[numberDaysTotal] = {
-      "startDate": new Date(),
-      "startPost": "1",
-      "startSelected": "start-post",
-      "endDate": new Date(),
-      "endSelected": "end-date"
-    };
+    initialiseDayData(numberDaysTotal);
+    localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
     colourDayTab(numberDaysTotal);
     switchDay(numberDaysTotal);
   } else {
@@ -1440,7 +1475,7 @@ function getVoteType(vote) {
   var hasUnvote = false;
   var lastUnvote = vote.lastIndexOf(unvoteKeyword);
   var lastVote = vote.lastIndexOf(voteKeyword);
-  var char_diffs = unvoteKeyword.length - voteKeyword.length;
+  var lengthDifference = unvoteKeyword.length - voteKeyword.length;
   if (vote.indexOf(unvoteKeyword) >= 0) {
     hasUnvote = true;
   }
@@ -1449,7 +1484,7 @@ function getVoteType(vote) {
   }
   if (hasVote == true) {
     if (hasUnvote == true) {
-      if (lastUnvote >= lastVote - char_diffs) {
+      if (lastUnvote >= lastVote - lengthDifference) {
         return -1;
       } else {
         return 1;
@@ -1583,23 +1618,35 @@ function getVoteLogForRange(start, end) {
 
 function tallyToBbcode(tally) {
   var bbcode = "";
+  var hasVotes = false;
   Object.keys(tally).filter(function(target) {
     return (target == "" ? false : true);
   }).sort(function(a, b) {
     return tally[b].length - tally[a].length;
   }).forEach(function(target) {
+    hasVotes = true;
     var voterList = [];
+    bbcode += "[b]" + target + " (" + tally[target].length + ")[/b] - [size=1]"
     for (var voter in tally[target]) {
-      voterList.push(tally[target][voter][0]);
+      if (voter > 0) {
+        bbcode += ", ";
+      }
+      bbcode += tally[target][voter][0];
+      if (scriptSettings["bbcodePostNumbers"]) {
+        bbcode += " (#[post=\""+tally[target][voter][2]+"\"]"+tally[target][voter][1]+"[/post])";
+      }
     }
-    bbcode += "[b]" + target + " (" + tally[target].length + ")[/b] - " + voterList.join(", ") + "\n";
+    bbcode += "[/size]\n";
   });
   if (tally.hasOwnProperty("")) {
+    if (hasVotes) {
+      bbcode += "\n";
+    }
     var voterList = [];
     for (var i in tally[""]) {
       voterList.push(tally[""][i][0]);
     }
-    bbcode += "[b]Yet to vote (" + voterList.length + ")[/b] - " + voterList.join(", ");
+    bbcode += "[b]Yet to vote (" + voterList.length + ")[/b] - [size=1]" + voterList.join(", ") + "[/size]";
   }
   return bbcode;
 }
@@ -1609,7 +1656,7 @@ function tallyToHtml(tally) {
   Object.keys(tally).filter(function(target) {
     return (target == "" ? false : true);
   }).sort(function(a, b) {
-    //This sorts tally by the length of each voter list - how many people are voting for user a vs how many people are voting for user b
+    //Sorts tally by the length of voter lists - how many people are voting for user a vs how many people are voting for user b
     return tally[b].length - tally[a].length;
   }).forEach(function(target) {
     var voterList = "";
@@ -1718,7 +1765,12 @@ function matchPlayer(string) {
       }
     }
   }
-  return closestMatch;
+  if (highestScore > 0) {
+    return closestMatch;
+  } else {
+    //If the highest score is 0 (no similarity), declines to return a player name
+    return string;
+  }
 }
 
 function matchPlayerByDay(string, day) {
@@ -2150,9 +2202,13 @@ function resetData() {
   currentDay = 1;
   nightfallTime = 2000;
   isTallyPopout = false;
+  initialiseDayData(1);
 }
 
 function resetScript() {
   $("#fmu-main-container").remove();
+  scriptSettings = {
+    "bbcodePostNumbers": 0
+  }
   $("#toggle-script").text("Start game");
 }
