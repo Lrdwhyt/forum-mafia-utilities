@@ -1,7 +1,7 @@
 # Forum Mafia Utilities
 
 Forum Mafia Utilities is a client-side script written for the Forums of Loathing.
-It changes the forum interface and offers various features to make playing, following, or hosting forum mafia games more streamlined.
+It alters the forum interface and offers various features to make playing, following, or hosting forum mafia games more streamlined.
 It is written in JavaScript and mainly uses the jQuery library.
 
 ## Installation
@@ -9,7 +9,7 @@ It is written in JavaScript and mainly uses the jQuery library.
 ### Firefox
 
 Forum Mafia Utilities for Firefox requires the Greasemonkey add-on, which can be downloaded [here](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/).
-With Greasemonkey,  install Forum Mafia Utilities via the Releases page or by [clicking here](https://github.com/Lrdwhyt/forum-mafia-utilities/releases/download/v0.1.0/forum-mafia-utilities.user.js).
+With Greasemonkey,  install Forum Mafia Utilities via the Releases page or by [clicking here](https://github.com/Lrdwhyt/forum-mafia-utilities/releases/download/v0.3.0/forum-mafia-utilities.user.js).
 
 ### Chrome
 
