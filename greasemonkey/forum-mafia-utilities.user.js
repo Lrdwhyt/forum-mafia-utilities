@@ -3,7 +3,7 @@
 // @namespace   lrdwhyt
 // @description Number of added functionalities to make playing forum mafia easier. Designed for Forums of Loathing.
 // @include     http://forums.kingdomofloathing.com/vb/showthread.php?*
-// @version     0.2.3
+// @version     0.3.0
 // @grant       GM_addStyle
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js
 // ==/UserScript==
@@ -130,7 +130,7 @@ GM_addStyle(`
 .input-button:hover {
   -moz-transition-duration: 0.4s;
   -webkit-transition-duration: 0.4s;
-  background-color: #f5f5f5 !important;
+  background-color: #f5f5f5;
   border-color: #f5f5f5;
 }
 .function-button {
@@ -267,8 +267,11 @@ GM_addStyle(`
   border-bottom: 3px solid #fff;
   padding-bottom: 6px;
 }
-#day-ranges .input-button:hover {
+#day-ranges .input-button:not(.boundary-option-selected):hover {
   border-color: #f5f5f5 !important;
+}
+#day-ranges .boundary-option-selected .input-button:hover {
+  border-color: var(--dark-contrast-color) !important;
 }
 #day-ranges .boundary-option-selected {
   border-color: var(--dark-contrast-color) !important;
@@ -283,7 +286,7 @@ GM_addStyle(`
 }
 #start-year, #start-month, #start-day, #end-year, #end-month, #end-day {
   -moz-transition-duration: 0.4s;
-  webkit-transition-duration: 0.4s;
+  -webkit-transition-duration: 0.4s;
   background-color: var(--light-color-highlighted);
   border-color: var(--light-color-highlighted) !important;
   margin: 0 !important;
@@ -294,6 +297,9 @@ GM_addStyle(`
   margin: 0 !important;
   background-color: #fff;
   border-bottom: 3px solid #fff;
+}
+#day-ranges .input-button:hover {
+  background-color: #f5f5f5;
 }
 #data-container {
   height: 0;
@@ -367,19 +373,20 @@ li.player-block:hover .player-controls {
 }`);
 
 monthNames = {
-    "jan": 0,
-    "feb": 1,
-    "mar": 2,
-    "apr": 3,
-    "may": 4,
-    "jun": 5,
-    "jul": 6,
-    "aug": 7,
-    "sep": 8,
-    "oct": 9,
-    "nov": 10,
-    "dec": 11
-  }
+  "jan": 0,
+  "feb": 1,
+  "mar": 2,
+  "apr": 3,
+  "may": 4,
+  "jun": 5,
+  "jul": 6,
+  "aug": 7,
+  "sep": 8,
+  "oct": 9,
+  "nov": 10,
+  "dec": 11
+}
+nightBufferTime = 10; //How long a night lasts - used for automatically filling in start times
 
 /*Represents script mode for the current thread
   0 - Off
@@ -418,7 +425,6 @@ $(document).ready(function () {
   threadId = getThreadId();
   threadScriptMode = parseInt(localStorage.getItem("threadScriptMode" + threadId));
   timeZone = getTimeZone();
-  initialiseDayData(1);
   if (localStorage.getItem("fmuSettings")) {
     scriptSettings = JSON.parse(localStorage.getItem("fmuSettings"));
   }
@@ -534,6 +540,7 @@ function loadLocalData() {
   if (localStorage.getItem("nightfallTime" + threadId)) {
     nightfallTime = parseInt(localStorage.getItem("nightfallTime" + threadId));
   }
+  initialiseDayData(1);
   if (localStorage.getItem("selectedDay" + threadId)) {
     currentDay = parseInt(localStorage.getItem("selectedDay" + threadId));
   }
@@ -879,12 +886,37 @@ function createInterface() {
   }
 }
 
+function getLastNightfall() {
+  var date = new Date();
+  date = getOffsetDate(date, 0, timeZone);
+  var nightfallHours = Math.floor(nightfallTime / 100);
+  var nightfallMinutes = nightfallTime % 100;
+  date.setUTCHours(nightfallHours);
+  date.setUTCMinutes(nightfallMinutes);
+  if (date.getTime() > new Date().getTime()) {
+    return getOffsetDate(date, -1, -timeZone)
+  } else {
+    return getOffsetDate(date, 0, -timeZone)
+  }
+}
+
 function initialiseDayData(day) {
+  var startPost = 1;
+  var startDate = getLastNightfall();
+  var endDate = getOffsetDate(getLastNightfall(), 1, 0);
+  if (day > 1) {
+    if (dayDataList[day - 1].hasOwnProperty("endPost")) {
+      startPost = dayDataList[day - 1]["endPost"] + 1;
+    }
+    var oldEndDate = new Date(dayDataList[day - 1]["endDate"]);
+    startDate = new Date(oldEndDate.getTime() + nightBufferTime * 60 * 1000);
+    endDate = new Date(oldEndDate.getTime() + 24 * 60 * 60 * 1000);
+  }
   dayDataList[day] = {
-    "startDate": new Date(),
-    "startPost": "1",
+    "startDate": startDate,
+    "startPost": startPost,
     "startSelected": "start-post",
-    "endDate": new Date(),
+    "endDate": endDate,
     "endSelected": "end-date"
   };
 }
@@ -1226,8 +1258,8 @@ function switchDay(day) {
     }
     var startTime = getOffsetDate(new Date(dayDataList[day]["startDate"]), 0, timeZone);
     $("#start-year").text(startTime.getUTCFullYear());
-    $("#start-month").text(startTime.getUTCMonth() + 1);
-    $("#start-day").text(startTime.getUTCDate());
+    $("#start-month").text(pad2Digits(startTime.getUTCMonth() + 1));
+    $("#start-day").text(pad2Digits(startTime.getUTCDate()));
     $("#start-time").text(getTimeString(startTime));
     if (dayDataList[day]["startSelected"]) {
       $("#" + dayDataList[day]["startSelected"]).addClass("boundary-option-selected");
@@ -1242,8 +1274,8 @@ function switchDay(day) {
     }
     var endTime = getOffsetDate(new Date(dayDataList[day]["endDate"]), 0, timeZone);
     $("#end-year").text(endTime.getUTCFullYear());
-    $("#end-month").text(endTime.getUTCMonth() + 1);
-    $("#end-day").text(endTime.getUTCDate());
+    $("#end-month").text(pad2Digits(endTime.getUTCMonth() + 1));
+    $("#end-day").text(pad2Digits(endTime.getUTCDate()));
     $("#end-time").text(getTimeString(endTime));
   } else {
     alert("Error");
@@ -1302,12 +1334,14 @@ function updateTally() {
   if (dayDataList[currentDay]["startSelected"] == "start-post") {
     start = parseInt(dayDataList[currentDay]["startPost"]);
   } else if (dayDataList[currentDay]["startSelected"] == "start-date") {
-    start = dayDataList[currentDay]["startDate"];
+    start = new Date(dayDataList[currentDay]["startDate"]);
+    start.setUTCSeconds(0, 0);
   }
   if (dayDataList[currentDay] && dayDataList[currentDay]["endSelected"] == "end-post") {
     end = parseInt(dayDataList[currentDay]["endPost"]);
   } else if (dayDataList[currentDay]["endSelected"] == "end-date") {
-    end = dayDataList[currentDay]["endDate"];
+    end = new Date(dayDataList[currentDay]["endDate"]);
+    end.setUTCSeconds(59, 1000);
   }
   var tally = getTallyForRange(start, end);
   savedTallyList[currentDay] = tally;
@@ -1373,6 +1407,7 @@ function togglePlayerState(toggleButton) {
     toggleButton.closest(".player-block").removeClass("dead-player").addClass("alive-player");
     toggleButton.text(getLifeStatus(0));
   }
+  updatePlayerState(toggleButton.parent(), toggleButton.parent().attr("name"));
 }
 
 function toggleDeathPhase(toggleButton) {
@@ -1442,7 +1477,7 @@ function colourDayTab(day) {
   }
 }
 
-function combinedData() {
+function getCombinedData() {
   var combinedData = {};
   $(".full-save, .partial-save").each(function() {
     pg = $(this).text();
@@ -1453,12 +1488,12 @@ function combinedData() {
 }
 
 function parseAllVotes() {
-  var fulldata = combinedData();
+  var fulldata = getCombinedData();
   Object.keys(fulldata).forEach(function(post) {
     var raw = fulldata[post]["r"];
     var voteType = getVoteType(raw);
     var voteTarget = getVoteTarget(raw);
-    if (voteType != 0) {
+    if (voteType != 0 && (voteType == -1 || voteTarget)) {
       recognisedVoteList[post] = {};
       recognisedVoteList[post]["user"] = fulldata[post]["u"];
       recognisedVoteList[post]["type"] = voteType;
@@ -1485,22 +1520,23 @@ function getVoteType(vote) {
   if (hasVote == true) {
     if (hasUnvote == true) {
       if (lastUnvote >= lastVote - lengthDifference) {
-        return -1;
+        return -1; //Unvote
       } else {
-        return 1;
+        return 1; //Unvote and vote
       }
     } else {
-      return 2;
+      return 2; //Vote
     }
   } else if (hasUnvote == true) {
-    return -1;
+    return -1; //Unvote
   } else {
-    return 0;
+    return 0; //No vote
   }
 }
 
 function getVoteTarget(vote) {
-  var voteTarget = vote.split(":").pop().split(unvoteKeyword).pop().split(voteKeyword).pop().trim();
+  var voteTarget = vote.split(":").pop().split(unvoteKeyword).pop().split(voteKeyword).pop();
+  voteTarget = voteTarget.split("(")[0].split("[")[0].trim();
   if (voteTarget == "") {
     return null;
   } else if (playerNameList.length > 0) {
@@ -1528,8 +1564,7 @@ function getTallyForRange(start, end) {
   var totalVotes = {};
   Object.keys(recognisedVoteList).forEach(function(post) {
     post = parseInt(post);
-    if (typeof start === "string" || start instanceof Date) {
-      start = new Date(start);
+    if (start instanceof Date) {
       if (compareDates(start, recognisedVoteList[post]["time"]) > 0) {
         return;
       }
@@ -1538,8 +1573,7 @@ function getTallyForRange(start, end) {
         return;
       }
     }
-    if (typeof end === "string" || end instanceof Date) {
-      end = new Date(end);
+    if (end instanceof Date) {
       if (compareDates(end, recognisedVoteList[post]["time"]) < 0) {
         return;
       }
@@ -1617,7 +1651,7 @@ function getVoteLogForRange(start, end) {
 }
 
 function tallyToBbcode(tally) {
-  var bbcode = "";
+  var bbcode = "Tally generated via Forum Mafia Utilities\n\n";
   var hasVotes = false;
   Object.keys(tally).filter(function(target) {
     return (target == "" ? false : true);
@@ -2027,7 +2061,14 @@ function padTime(time) {
     paddedTime = "0" + paddedTime;
   }
   return paddedTime.substr(0, 2) + ":" + paddedTime.substr(2);
-  return paddedTime;
+}
+
+function pad2Digits(number) {
+  var paddedNumber = number + "";
+  while (paddedNumber.length < 2) {
+    paddedNumber = "0" + paddedNumber;
+  }
+  return paddedNumber;
 }
 
 function getTimeZone() {

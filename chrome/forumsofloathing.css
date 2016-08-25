@@ -74,13 +74,13 @@
 .full-data-day:hover {
   background-color: var(--dark-color-highlighted);
 }
-.partial-data-day {
+.day-tab.partial-data-day {
   background-color: var(--med-color);
 }
 .partial-data-day:hover {
   background-color: var(--med-color-highlighted);
 }
-.empty-data-day {
+.day-tab.empty-data-day {
   background-color: var(--light-color);
 }
 .empty-data-day:hover {
@@ -96,9 +96,9 @@
   text-decoration: none;
   min-width: 18px;
 }
-.page-selected, .day-tabed {
+.page-selected, .day-selected {
   padding-bottom: 2px !important;
-  border-bottom: 3px solid var(--dark-contrast-color);
+  border-bottom: 3px solid var(--dark-contrast-color) !important;
 }
 #page-label {
   background-color: var(--dark-contrast-color);
@@ -137,8 +137,8 @@
   background-color: #546e7a;
 }
 .day-tab {
-  -moz-transition-duration: 0.5s;
-  -webkit-transition-duration: 0.5s;
+  -moz-transition: background-color 0.5s;
+  -webkit-transition: background-color 0.5s;
   cursor: pointer;
   display: inline-block;
   padding: 5px 10px;
@@ -170,10 +170,6 @@
 #remove-day:hover {
   background-color: var(--dark-contrast-color-highlighted);
   cursor: pointer;
-}
-#toggle-game-configuration-container {
-  background-color: var(--light-color);
-  padding: 10px;
 }
 #day-area {
   background-color: var(--light-color);
@@ -256,21 +252,56 @@
   background-color: var(--med-color);
   color: #333;
 }
+#day-ranges button {
+  border-bottom: 3px solid #fff;
+  padding-bottom: 6px;
+}
+#day-ranges .input-button:not(.boundary-option-selected):hover {
+  border-color: #f5f5f5 !important;
+}
+#day-ranges .boundary-option-selected .input-button:hover {
+  border-color: var(--dark-contrast-color) !important;
+}
+#day-ranges .boundary-option-selected {
+  border-color: var(--dark-contrast-color) !important;
+}
+#start-date, #end-date {
+  display: inline-block;
+  border-bottom: none;
+  padding-bottom: 0px !important;
+}
+#day-ranges div.boundary-option-selected button.input-button {
+  border-color: var(--dark-contrast-color) !important;
+}
+#start-year, #start-month, #start-day, #end-year, #end-month, #end-day {
+  -moz-transition-duration: 0.4s;
+  -webkit-transition-duration: 0.4s;
+  background-color: var(--light-color-highlighted);
+  border-color: var(--light-color-highlighted) !important;
+  margin: 0 !important;
+  padding-left: 3px !important;
+  padding-right: 3px !important;
+}
+#start-time, #end-time {
+  margin: 0 !important;
+  background-color: #fff;
+  border-bottom: 3px solid #fff;
+}
+#day-ranges .input-button:hover {
+  background-color: #f5f5f5;
+}
 #data-container {
   height: 0;
   opacity: 0;
+}
+#toggle-game-configuration-container {
+  background-color: var(--light-color);
+  padding: 10px;
 }
 #game-configuration {
   background-color: var(--light-color);
   display: none;
   padding: 10px;
-}
-.boundary-option {
-  border-bottom: 3px solid #fff;
-  padding-bottom: 6px !important;
-}
-.boundary-option.boundary-option-selected {
-  border-bottom: 3px solid var(--dark-contrast-color);
 }
 #toggle-game-configuration {
   margin: 5px 0 !important;

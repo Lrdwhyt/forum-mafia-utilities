@@ -1,6 +1,6 @@
 {
   "name": "Forum Mafia Utilities",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "manifest_version": 2,
   "content_scripts": [{
     "css": ["forumsofloathing.css"],
