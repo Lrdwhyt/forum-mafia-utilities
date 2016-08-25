@@ -386,8 +386,6 @@ monthNames = {
   "nov": 10,
   "dec": 11
 }
-nightBufferTime = 10; //How long a night lasts - used for automatically filling in start times
-
 /*Represents script mode for the current thread
   0 - Off
   1 - On, game configuration is hidden
@@ -400,7 +398,7 @@ includeGm = false; //Whether to include the GM when retrieving data
 gameSettings = {
   "unvoteKeyword": "unvote", //String used to signify unvote
   "voteKeyword": "vote", //String used to signify vote
-  "popoutTally": "0"
+  "popoutTally": ""
 };
 gmNameList = [];
 playerNameList = [];
@@ -418,9 +416,9 @@ dayDataList = [];
 currentDay = 1; //The day that is selected by the user
 nightfallTime = 2000; //Default time for nightfall
 timeZone = 0;
-isTallyPopout = false;
 scriptSettings = {
-  "bbcodePostNumbers": 0 //BBcode post numbers
+  "bbcodePostNumbers": 0, //BBcode post numbers
+  "nightBufferTime": "10" //How long a night lasts - used for automatically filling in start times
 }
 
 $(document).ready(function () {
@@ -466,6 +464,15 @@ $(document).ready(function () {
         id: "toggle-bbcode-post-numbers",
         text: "Off"
       }))
+      .append($("<br />"))
+      .append($("<span />", {
+        text: "Night buffer time (minutes)"
+      }))
+      .append($("<button />", {
+        class: "input-button",
+        id: "night-buffer-time",
+        text: scriptSettings["nightBufferTime"]
+      }))
       .append($("<div />", {
         id: "memory-usage",
         text: "Local memory: ~" + Math.round(unescape(encodeURIComponent(JSON.stringify(localStorage))).length * 2 / 1024 / 1024 * 10000) / 10000 + " MB used of 5 MB"
@@ -491,6 +498,21 @@ $(document).ready(function () {
   });
   $("#toggle-bbcode-post-numbers").click(function() {
     toggleBbcodePostNumbers($(this));
+  });
+  $("#night-buffer-time").click(function() {
+    var newBuffer = parseInt(prompt("Enter night buffer time in minutes"));
+    if (newBuffer > 0) {
+      scriptSettings["nightBufferTime"] = newBuffer;
+      localStorage.setItem("fmuSettings", JSON.stringify(scriptSettings));
+      $(this).text(newBuffer);
+    }
+  });
+  $("#clear-data").click(function() {
+    if (confirm("Are you sure you want to reset all data?")) {
+      resetData();
+      localStorage.clear();
+      resetScript();
+    }
   });
   if (scriptSettings["bbcodePostNumbers"]) {
       $("#toggle-bbcode-post-numbers").text("On");
@@ -824,7 +846,8 @@ function createInterface() {
   $("#toggle-tally-display").click(function() {
     toggleTallyDisplay($(this));
   });
-  if (localStorage.getItem("tallyDisplay" + threadId)) {
+  if (gameSettings["popoutTally"]) {
+    gameSettings["popoutTally"] = "";
     toggleTallyDisplay($("#toggle-tally-display"));
   }
   $("#toggle-game-configuration").click(function() {
@@ -914,13 +937,6 @@ function createInterface() {
     player = $(this).parents(".player-block").attr("name");
     removePlayer(player);
   });
-  $("#clear-data").click(function() {
-    if (confirm("Are you sure you want to reset all data?")) {
-      resetData();
-      localStorage.clear();
-      resetScript();
-    }
-  });
   if (gmNameList.length > 0) {
     generateData();
   }
@@ -949,7 +965,7 @@ function initialiseDayData(day) {
       startPost = dayDataList[day - 1]["endPost"] + 1;
     }
     var oldEndDate = new Date(dayDataList[day - 1]["endDate"]);
-    startDate = new Date(oldEndDate.getTime() + nightBufferTime * 60 * 1000);
+    startDate = new Date(oldEndDate.getTime() + parseInt(scriptSettings["nightBufferTime"]) * 60 * 1000);
     endDate = new Date(oldEndDate.getTime() + 24 * 60 * 60 * 1000);
   }
   dayDataList[day] = {
@@ -1326,14 +1342,14 @@ function switchDay(day) {
 }
 
 function toggleTallyDisplay(toggleButton) {
-  if (isTallyPopout == true) {
-    isTallyPopout = false;
-    localStorage.setItem("tallyDisplay" + threadId, "");
+  if (gameSettings["popoutTally"]) {
+    gameSettings["popoutTally"] = "";
+    localStorage.setItem("gameSettings" + threadId, JSON.stringify(gameSettings));
     $("#tally-container").removeClass("floating");
     toggleButton.text("Pop out");
   } else {
-    isTallyPopout = true;
-    localStorage.setItem("tallyDisplay" + threadId, "1");
+    gameSettings["popoutTally"] = "1";
+    localStorage.setItem("gameSettings" + threadId, JSON.stringify(gameSettings));
     $("#tally-container").addClass("floating");
     toggleButton.text("Close");
   }
@@ -1376,7 +1392,7 @@ function updateTally() {
     end = new Date(dayDataList[currentDay]["endDate"]);
     end.setUTCSeconds(59, 1000);
   }
-  var tally = getTallyForRange(start, end);
+  var tally = getTallyForRange(start, end, currentDay);
   savedTallyList[currentDay] = tally;
   localStorage.setItem("savedTallyList" + threadId, JSON.stringify(savedTallyList));
   $("#tally-body").html(tallyToHtml(tally));
@@ -1590,7 +1606,7 @@ function compareDates(a, b) {
   }
 }
 
-function getTallyForRange(start, end) {
+function getTallyForRange(start, end, day) {
   parseAllVotes();
   var playerVotes = {};
   var totalVotes = {};
@@ -1615,7 +1631,11 @@ function getTallyForRange(start, end) {
       }
     }
     var vote = recognisedVoteList[post];
-    var type = vote["type"];
+    if (playerStatusList[vote["user"]] != 0 && playerStatusList[vote["user"]] < day * 2) {
+      //Throwing out votes from dead players
+      return;
+    }
+    var voteType = vote["type"];
     if (!playerVotes[vote["user"]]) {
       if (playerNameList.length > 0 && $.inArray(vote["user"], playerNameList) == -1) {
         registerUnrecognisedVoter(vote["user"]);
@@ -1625,15 +1645,15 @@ function getTallyForRange(start, end) {
     if (!playerVotes[vote["user"]]["post"] || parseInt(post) > playerVotes[vote["user"]]["post"]) {
       playerVotes[vote["user"]]["post"] = post;
       playerVotes[vote["user"]]["link"] = vote["link"];
-      if (type == 2 || type == 1) {
+      if (voteType == 2 || voteType == 1) {
         playerVotes[vote["user"]]["target"] = vote["target"];
-      } else if (type == -1) {
+      } else if (voteType == -1) {
         playerVotes[vote["user"]]["target"] = "";
       }
     }
   });
   for (var i in playerNameList) {
-    if (playerStatusList[playerNameList[i]] != 0 && playerStatusList[playerNameList[i]] < currentDay * 2) {
+    if (playerStatusList[playerNameList[i]] != 0 && playerStatusList[playerNameList[i]] < day * 2) {
       continue;
     }
     if (!playerVotes.hasOwnProperty(playerNameList[i])) {
@@ -1692,7 +1712,11 @@ function tallyToBbcode(tally) {
   }).forEach(function(target) {
     hasVotes = true;
     var voterList = [];
-    bbcode += "[b]" + target + " (" + tally[target].length + ")[/b] - [size=1]"
+    bbcode += "[b]" + target + " (" + tally[target].length;
+    if (tally[target].length % 10 == 8) {
+      bbcode += "[u][/u]";
+    }
+    bbcode += ")[/b] - [size=1]"
     for (var voter in tally[target]) {
       if (voter > 0) {
         bbcode += ", ";
@@ -1712,7 +1736,11 @@ function tallyToBbcode(tally) {
     for (var i in tally[""]) {
       voterList.push(tally[""][i][0]);
     }
-    bbcode += "[b]Yet to vote (" + voterList.length + ")[/b] - [size=1]" + voterList.join(", ") + "[/size]";
+    bbcode += "[b]Yet to vote (" + voterList.length;
+    if (voterList.length % 10 == 8) {
+      bbcode += "[u][/u]";
+    }
+    bbcode += ")[/b] - [size=1]" + voterList.join(", ") + "[/size]";
   }
   return bbcode;
 }
@@ -2284,7 +2312,6 @@ function resetData() {
   dayDataList = [];
   currentDay = 1;
   nightfallTime = 2000;
-  isTallyPopout = false;
   initialiseDayData(1);
 }
 
