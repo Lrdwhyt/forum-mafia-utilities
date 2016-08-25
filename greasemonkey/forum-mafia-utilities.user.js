@@ -397,22 +397,24 @@ numberPostsPerPage = 60; //Maximum number of posts per page - Forum default is 6
 ignoredPlayerList = ["TallyBot"]; //Usernames to ignore when retrieving data
 nightKeywords = ["lynch", "kill", "day", "night", "someone", "die"]; //List of words associated with night posts (unimplemented)
 includeGm = false; //Whether to include the GM when retrieving data
-unvoteKeyword = "unvote"; //String used to signify unvote
-voteKeyword = "vote"; //String used to signify vote
+gameSettings = {
+  "unvoteKeyword": "unvote", //String used to signify unvote
+  "voteKeyword": "vote", //String used to signify vote
+  "popoutTally": "0"
+};
 gmNameList = [];
 playerNameList = [];
 subNameList = {};
 playerNicknameList = {};
 playerStatusList = {};
-savedTallyList = {};
+savedTallyList = [];
 recognisedVoteList = {};
 unrecognisedVoterList = [];
 threadId = 0;
 currentPage = 0;
 pageTotal = 0;
 numberPostsOnPage = 0;
-dayDataList = {};
-numberDaysTotal = 1;
+dayDataList = [];
 currentDay = 1; //The day that is selected by the user
 nightfallTime = 2000; //Default time for nightfall
 timeZone = 0;
@@ -521,9 +523,6 @@ function getCurrentPageNumbers() {
 }
 
 function loadLocalData() {
-  if (localStorage.getItem("dayCount" + threadId)) {
-    numberDaysTotal = parseInt(localStorage.getItem("dayCount" + threadId));
-  }
   if (localStorage.getItem("gmNameList" + threadId)) {
     gmNameList = JSON.parse(localStorage.getItem("gmNameList" + threadId));
   }
@@ -555,6 +554,9 @@ function loadLocalData() {
   }
   if (localStorage.getItem("unrecognisedVoterList" + threadId)) {
     unrecognisedVoterList = JSON.parse(localStorage.getItem("unrecognisedVoterList" + threadId));
+  }
+  if (localStorage.getItem("gameSettings" + threadId)) {
+    gameSettings = JSON.parse(localStorage.getItem("gameSettings" + threadId));
   }
 }
 
@@ -709,6 +711,26 @@ function createInterface() {
       id: "nightfall-time",
       text: padTime(nightfallTime)
     }))
+    .append($("<div />", {
+      class: "vote-keywords"
+    })
+    .append($("<span />", {
+      text: "Unvote keyword"
+    }))
+    .append($("<button />", {
+      class: "input-button",
+      id: "unvote-keyword",
+      text: "unvote"
+    }))
+    .append($("<br />"))
+    .append($("<span />", {
+      text: "Vote keyword"
+    }))
+    .append($("<button />", {
+      class: "input-button",
+      id: "vote-keyword",
+      text: "vote"
+    })))
     .append($("<br />"))
     .append($("<span />", {
       text: "Player names"
@@ -766,7 +788,7 @@ function createInterface() {
       newBlock.addClass("empty-save");
     }
   }
-  for (var day = 1; day <= numberDaysTotal; day++) {
+  for (var day = 1; day < dayDataList.length; day++) {
     addDayTabGui(day);
     colourDayTab(day);
   }
@@ -791,6 +813,8 @@ function createInterface() {
     $("#game-configuration").show();
     $("#toggle-game-configuration").text("Hide game configuration");
   }
+  $("#vote-keyword").text(gameSettings["voteKeyword"]);
+  $("#unvote-keyword").text(gameSettings["unvoteKeyword"]);
   $("#tally-body").on("click",".unrecognised-voter", function() {
     addPlayer($(this).attr("name"));
   })
@@ -833,6 +857,22 @@ function createInterface() {
   });
   $("#nightfall-time").click(function() {
     changeNightfallTime($(this));
+  });
+  $("#vote-keyword").click(function() {
+    var newKeyword = prompt("Enter new vote keyword");
+    if (newKeyword) {
+      gameSettings["voteKeyword"] = newKeyword;
+      localStorage.setItem("gameSettings" + threadId, JSON.stringify(gameSettings));
+      $(this).text(newKeyword);
+    }
+  });
+  $("#unvote-keyword").click(function() {
+    var newKeyword = prompt("Enter new unvote keyword");
+    if (newKeyword) {
+      gameSettings["unvoteKeyword"] = newKeyword;
+      localStorage.setItem("gameSettings" + threadId, JSON.stringify(gameSettings));
+      $(this).text(newKeyword);
+    }
   });
   $("#add-player").click(function() {
     newPlayer = prompt("Enter the name of the player you want to add");
@@ -1277,13 +1317,6 @@ function switchDay(day) {
     $("#end-month").text(pad2Digits(endTime.getUTCMonth() + 1));
     $("#end-day").text(pad2Digits(endTime.getUTCDate()));
     $("#end-time").text(getTimeString(endTime));
-  } else {
-    alert("Error");
-    $(".boundary-option").removeClass("boundary-option-selected");
-    $("#start-post").text("Post #?");
-    $("#start-time").text(padTime(nightfallTime + 1));
-    $("#end-post").text("Post #?");
-    $("#end-time").text(padTime(nightfallTime));
   }
   if (savedTallyList[day]) {
     $("#tally-body").html(tallyToHtml(savedTallyList[day]));
@@ -1316,11 +1349,11 @@ function addDayTabGui(day) {
 
 function deleteDayData(day) {
   if (dayDataList[day]) {
-    delete dayDataList[day];
+    dayDataList.splice(day, 1);
     localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
   }
   if (savedTallyList[day]) {
-    delete savedTallyList[day];
+    savedTallyList.splice(day, 1);
     localStorage.setItem("savedTallyList" + threadId, JSON.stringify(savedTallyList));
   }
 }
@@ -1442,23 +1475,22 @@ function changeDeathTime(toggleButton) {
 
 function changeDayCount(change) {
   if (change > 0) {
-    numberDaysTotal++;
-    addDayTabGui(numberDaysTotal);
-    initialiseDayData(numberDaysTotal);
+    var newDay = dayDataList.length;
+    addDayTabGui(newDay);
+    initialiseDayData(newDay);
     localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
-    colourDayTab(numberDaysTotal);
-    switchDay(numberDaysTotal);
+    colourDayTab(newDay);
+    switchDay(newDay);
   } else {
-    if (numberDaysTotal > 1) {
-      deleteDayData(numberDaysTotal);
-      numberDaysTotal--;
-      if (currentDay > numberDaysTotal) {
-        switchDay(numberDaysTotal);
+    var oldDay = dayDataList.length - 1;
+    if (oldDay > 1) {
+      deleteDayData(oldDay);
+      if (currentDay >= oldDay) {
+        switchDay(oldDay - 1);
       }
-      $("#day-tab-container .day-tab[name='" + (numberDaysTotal + 1) + "']").remove();
+      $("#day-tab-container .day-tab[name='" + oldDay + "']").remove();
     }
   }
-  localStorage.setItem("dayCount" + threadId, numberDaysTotal + "");
 }
 
 function colourDayTab(day) {
@@ -1508,13 +1540,13 @@ function parseAllVotes() {
 function getVoteType(vote) {
   var hasVote = false;
   var hasUnvote = false;
-  var lastUnvote = vote.lastIndexOf(unvoteKeyword);
-  var lastVote = vote.lastIndexOf(voteKeyword);
-  var lengthDifference = unvoteKeyword.length - voteKeyword.length;
-  if (vote.indexOf(unvoteKeyword) >= 0) {
+  var lastUnvote = vote.lastIndexOf(gameSettings["unvoteKeyword"]);
+  var lastVote = vote.lastIndexOf(gameSettings["voteKeyword"]);
+  var lengthDifference = gameSettings["unvoteKeyword"].length - gameSettings["voteKeyword"].length;
+  if (vote.indexOf(gameSettings["unvoteKeyword"]) >= 0) {
     hasUnvote = true;
   }
-  if (vote.replace(new RegExp(unvoteKeyword, "g"), "").indexOf(voteKeyword) >= 0) {
+  if (vote.replace(new RegExp(gameSettings["unvoteKeyword"], "g"), "").indexOf(gameSettings["voteKeyword"]) >= 0) {
     hasVote = true;
   }
   if (hasVote == true) {
@@ -1535,7 +1567,7 @@ function getVoteType(vote) {
 }
 
 function getVoteTarget(vote) {
-  var voteTarget = vote.split(":").pop().split(unvoteKeyword).pop().split(voteKeyword).pop();
+  var voteTarget = vote.split(":").pop().split(gameSettings["unvoteKeyword"]).pop().split(gameSettings["voteKeyword"]).pop();
   voteTarget = voteTarget.split("(")[0].split("[")[0].trim();
   if (voteTarget == "") {
     return null;
@@ -2028,7 +2060,8 @@ function getLowerCase(string) {
 }
 
 function validateTime(time) {
-  var validTime = parseInt(time.replace(":","").replace(" ","").replace("h","").replace(".",""));
+  var cleanedTime = time.replace(":","").replace(" ","").replace("h","").replace(".","");
+  var validTime = parseInt(cleanedTime);
   if (validTime >= 100) {
     var hour = Math.floor(validTime / 100);
     var minute = validTime % 100;
@@ -2042,6 +2075,12 @@ function validateTime(time) {
           return validTime;
         }
       }
+    }
+  } else if (validTime < 60 && cleanedTime.charAt(0) == "0") {
+    if (time.toLowerCase().indexOf("pm") >= 0) {
+      return validTime + 1200;
+    } else {
+      return validTime;
     }
   } else if (validTime < 24) {
     if (validTime <= 11 && time.toLowerCase().indexOf("pm") >= 0) {
@@ -2179,7 +2218,7 @@ function generateData() {
       if (!includeGm || $.inArray(username, gmNameList) == -1) {
         boldPost.each(function () {
           var content = $(this).html().replace(/(['"])/g, '\\$1').replace(/\n/g, " ").toLowerCase();
-          if (content.indexOf(voteKeyword) >= 0 || content.indexOf(unvoteKeyword) >= 0) {
+          if (content.indexOf(gameSettings["voteKeyword"]) >= 0 || content.indexOf(gameSettings["unvoteKeyword"]) >= 0) {
             boldedContent += content.trim();
           }
         });
@@ -2213,12 +2252,13 @@ function resetData() {
   localStorage.removeItem("playerNameList" + threadId);
   localStorage.removeItem("subNameList" + threadId);
   localStorage.removeItem("dayDataList" + threadId);
-  localStorage.removeItem("dayCount" + threadId);
+  localStorage.removeItem("selectedDay" + threadId);
   localStorage.removeItem("savedTallyList" + threadId);
   localStorage.removeItem("dayDataList" + threadId);
   localStorage.removeItem("selectedData" + threadId);
   localStorage.removeItem("nightfallTime" + threadId);
   localStorage.removeItem("playerStatusList" + threadId);
+  localStorage.removeItem("gameSettings" + threadId);
   localStorage.removeItem("tallyDisplay" + threadId);
   localStorage.removeItem("unrecognisedVoterList" + threadId);
   $(".full-save, .partial-save").each(function() {
@@ -2228,18 +2268,20 @@ function resetData() {
   });
   threadScriptMode = 0;
   includeGm = false;
-  unvoteKeyword = "unvote";
-  voteKeyword = "vote";
+  gameSettings = {
+    "unvoteKeyword": "unvote", //String used to signify unvote
+    "voteKeyword": "vote", //String used to signify vote
+    "popoutTally": "0"
+  };
   gmNameList = [];
   playerNameList = [];
   subNameList = {};
   playerNicknameList = {};
   playerStatusList = {};
-  savedTallyList = {};
+  savedTallyList = [];
   recognisedVoteList = {};
   unrecognisedVoterList = [];
-  dayDataList = {};
-  numberDaysTotal = 1;
+  dayDataList = [];
   currentDay = 1;
   nightfallTime = 2000;
   isTallyPopout = false;
