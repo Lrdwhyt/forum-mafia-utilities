@@ -2245,7 +2245,16 @@ function generateData() {
       var boldedContent = "";
       if (!includeGm || $.inArray(username, gmNameList) == -1) {
         boldPost.each(function () {
-          var content = $(this).html().replace(/(['"])/g, '\\$1').replace(/\n/g, " ").toLowerCase();
+          var htmlContent = $(this).html();
+          if ($(this).children(".inlineimg").length > 0) {
+            var htmlContent = $("<b>" + $(this).html() + "</b>");
+            htmlContent.children("[title='Surprised']").replaceWith(":o");
+            htmlContent.children("[title='Broad Smile']").replaceWith(":D");
+            htmlContent.children("[title='Razz']").replaceWith(":p");
+            htmlContent.children("[title='Mad']").replaceWith(":x");
+            htmlContent = htmlContent.html();
+          }
+          var content = htmlContent.replace(/(['"])/g, '\\$1').replace(/\n/g, " ").toLowerCase();
           if (content.indexOf(gameSettings["voteKeyword"]) >= 0 || content.indexOf(gameSettings["unvoteKeyword"]) >= 0) {
             boldedContent += content.trim();
           }
@@ -2287,7 +2296,6 @@ function resetData() {
   localStorage.removeItem("nightfallTime" + threadId);
   localStorage.removeItem("playerStatusList" + threadId);
   localStorage.removeItem("gameSettings" + threadId);
-  localStorage.removeItem("tallyDisplay" + threadId);
   localStorage.removeItem("unrecognisedVoterList" + threadId);
   $(".full-save, .partial-save").each(function() {
     pg = $(this).text();
