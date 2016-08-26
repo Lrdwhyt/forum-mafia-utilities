@@ -3,7 +3,7 @@
 // @namespace   lrdwhyt
 // @description Number of added functionalities to make playing forum mafia easier. Designed for Forums of Loathing.
 // @include     http://forums.kingdomofloathing.com/vb/showthread.php?*
-// @version     0.3.0
+// @version     0.4.0
 // @grant       GM_addStyle
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js
 // ==/UserScript==
@@ -2292,7 +2292,6 @@ function resetData() {
   localStorage.removeItem("selectedDay" + threadId);
   localStorage.removeItem("savedTallyList" + threadId);
   localStorage.removeItem("dayDataList" + threadId);
-  localStorage.removeItem("selectedData" + threadId);
   localStorage.removeItem("nightfallTime" + threadId);
   localStorage.removeItem("playerStatusList" + threadId);
   localStorage.removeItem("gameSettings" + threadId);
@@ -2326,7 +2325,8 @@ function resetData() {
 function resetScript() {
   $("#fmu-main-container").remove();
   scriptSettings = {
-    "bbcodePostNumbers": 0
+    "bbcodePostNumbers": 0,
+    "nightBufferTime": "10" //How long a night lasts - used for automatically filling in start times
   }
   $("#toggle-script").text("Start game");
 }
