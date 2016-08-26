@@ -550,7 +550,7 @@ function loadLocalData() {
   }
   if (currentPage == 1 && gmNameList.length == 0) {
     gmNameList.push($(".bigusername").first().text());
-    localStorage.setItem("gmNameList" + threadId, JSON.stringify(gmNameList));
+    updateGameData("gmNameList", gmNameList);
   }
   if (localStorage.getItem("playerNameList" + threadId)) {
     playerNameList = JSON.parse(localStorage.getItem("playerNameList" + threadId));
@@ -594,7 +594,8 @@ function createInterface() {
       text: "Page"
     })).append($("<span />", {
       id: "page-controls"
-    })).appendTo("#fmu-main-container");
+    }))
+    .appendTo("#fmu-main-container");
   $("<div />", {
     id: "day-controls"
   })
@@ -608,7 +609,8 @@ function createInterface() {
     .append($("<div />", {
       id: "remove-day",
       text: "-"
-    })).appendTo("#fmu-main-container");
+    }))
+    .appendTo("#fmu-main-container");
   $("<div />", {
     id: "day-area"
   })
@@ -628,7 +630,7 @@ function createInterface() {
     }))
     .append($("<button />", {
       class: "function-button",
-      id: "copy-tally",
+      id: "copy-bbcode",
       text: "Copy BBcode"
     }))
     .append($("<button />", {
@@ -792,8 +794,8 @@ function createInterface() {
     })))
     .appendTo($("#fmu-main-container"));
   for (var page = 1; page <= pageTotal; page++) {
-    pageStatus = getPageStatus(threadId, page);
-    newBlock = $("<a />", {
+    var pageStatus = getPageStatus(threadId, page);
+    var newBlock = $("<a />", {
       class: "page-link",
       href: getPageLink(threadId, page),
       page: page,
@@ -811,22 +813,22 @@ function createInterface() {
     }
   }
   for (var day = 1; day < dayDataList.length; day++) {
-    addDayTabGui(day);
+    drawDayTab(day);
     colourDayTab(day);
   }
   switchDay(currentDay);
   if (gmNameList.length > 0) {
     for (var i = 0; i < gmNameList.length; i++) {
-      addGmGui(gmNameList[i]);
+      drawGm(gmNameList[i]);
     }
   }
   if (playerNameList.length > 0) {
     for (var i = 0; i < playerNameList.length; i++) {
-      var playerEle = addPlayerGui(playerNameList[i]);
-      updatePlayerState(playerEle, playerNameList[i]);
+      var playerBlock = drawPlayer(playerNameList[i]);
+      updatePlayerState(playerBlock, playerNameList[i]);
       if (subNameList[playerNameList[i]]) {
         for (var j = 0; j < subNameList[playerNameList[i]].length; j++) {
-          addSubGui(playerNameList[i], subNameList[playerNameList[i]][j]);
+          drawSub(playerNameList[i], subNameList[playerNameList[i]][j]);
         }
       }
     }
@@ -841,7 +843,7 @@ function createInterface() {
     addPlayer($(this).attr("name"));
   })
   $("#update-tally").click(updateTally);
-  $("#copy-tally").click(copyBbcodeTally);
+  $("#copy-bbcode").click(copyBbcodeTally);
   $("#copy-vote-log").click(copyVoteLog);
   $("#toggle-tally-display").click(function() {
     toggleTallyDisplay($(this));
@@ -875,7 +877,7 @@ function createInterface() {
   $("#add-gm").click(promptAddGm);
   $("#gm-names").on("click", ".gm-name", function() {
     gmNameList.splice($.inArray($(this).text(), gmNameList), 1);
-    localStorage.setItem("gmNameList" + threadId, JSON.stringify(gmNameList));
+    updateGameData("gmNameList", gmNameList);
     $(this).remove();
   });
   $("#nightfall-time").click(function() {
@@ -885,7 +887,7 @@ function createInterface() {
     var newKeyword = prompt("Enter new vote keyword");
     if (newKeyword) {
       gameSettings["voteKeyword"] = newKeyword;
-      localStorage.setItem("gameSettings" + threadId, JSON.stringify(gameSettings));
+      updateGameData("gameSettings", gameSettings);
       $(this).text(newKeyword);
     }
   });
@@ -893,12 +895,12 @@ function createInterface() {
     var newKeyword = prompt("Enter new unvote keyword");
     if (newKeyword) {
       gameSettings["unvoteKeyword"] = newKeyword;
-      localStorage.setItem("gameSettings" + threadId, JSON.stringify(gameSettings));
+      updateGameData("gameSettings", gameSettings);
       $(this).text(newKeyword);
     }
   });
   $("#add-player").click(function() {
-    newPlayer = prompt("Enter the name of the player you want to add");
+    var newPlayer = prompt("Enter the name of the player you want to add");
     if (newPlayer) {
       addPlayer(newPlayer);
     }
@@ -910,7 +912,7 @@ function createInterface() {
   $("#confirm-paste").click(confirmPaste);
   $("#reset-players").click(clearPlayers);
   $("#player-list").on("click", ".player-name", function() {
-    handleRemovePlayer($(this))
+    handleEditPlayer($(this))
   });
   $("#player-list").on("click", ".player-state", function() {
     togglePlayerState($(this));
@@ -922,19 +924,19 @@ function createInterface() {
     changeDeathTime($(this));
   });
   $("#player-list").on("click", ".add-sub", function() {
-    player = $(this).parents(".player-block").children(".player-name").text();
-    newSub = prompt("Enter alternative name for player - e.g. subs or nicknames");
+    var player = $(this).parents(".player-block").children(".player-name").text();
+    var newSub = prompt("Enter alternative name for player - e.g. subs or nicknames");
     if (newSub) {
       addSub(player, newSub);
     }
   });
   $("#player-list").on("click", ".sub-name", function() {
-    player = $(this).parents(".player-block").attr("name");
-    sub = $(this).text();
+    var player = $(this).parents(".player-block").attr("name");
+    var sub = $(this).text();
     removeSub(player, sub);
   });
   $("#player-list").on("click", ".remove-player", function() {
-    player = $(this).parents(".player-block").attr("name");
+    var player = $(this).parents(".player-block").attr("name");
     removePlayer(player);
   });
   if (gmNameList.length > 0) {
@@ -943,8 +945,8 @@ function createInterface() {
 }
 
 function getLastNightfall() {
-  var date = new Date();
-  date = getOffsetDate(date, 0, timeZone);
+  //Get current date in timeZone
+  var date = getOffsetDate(new Date(), 0, timeZone);
   var nightfallHours = Math.floor(nightfallTime / 100);
   var nightfallMinutes = nightfallTime % 100;
   date.setUTCHours(nightfallHours);
@@ -978,18 +980,14 @@ function initialiseDayData(day) {
 }
 
 function updatePlayerState(playerBlock, playerName) {
-  if (playerStatusList.hasOwnProperty(playerName)) {
-    var playerStatus = playerStatusList[playerName];
-    $(".player-block[name='" + playerName + "'] .player-state").text(getLifeStatus(playerStatus));
-    $(".player-block[name='" + playerName + "'] .death-phase").text(getPhaseName(playerStatus));
-    $(".player-block[name='" + playerName + "'] .death-time").text(getDeathTime(playerStatus));
-    if (playerStatusList[playerName] == 0) {
-      playerBlock.addClass("alive-player");
-    } else {
-      playerBlock.addClass("dead-player");
-    }
-  } else {
+  var playerStatus = playerStatusList[playerName];
+  $(".player-block[name='" + playerName + "'] .player-state").text(getLifeStatus(playerStatus));
+  $(".player-block[name='" + playerName + "'] .death-phase").text(getPhaseName(playerStatus));
+  $(".player-block[name='" + playerName + "'] .death-time").text(getDeathTime(playerStatus));
+  if (playerStatus == 0) {
     playerBlock.addClass("alive-player");
+  } else {
+    playerBlock.addClass("dead-player");
   }
 }
 
@@ -1020,7 +1018,7 @@ function switchStartPost() {
     dayDataList[currentDay]["startPost"] = parseInt(post);
   }
   dayDataList[currentDay]["startSelected"] = "start-post";
-  localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+  updateGameData("dayDataList", dayDataList);
   switchDay(currentDay);
   colourDayTab(currentDay);  
 }
@@ -1030,7 +1028,7 @@ function switchStartDate() {
     dayDataList[currentDay] = {};
   }
   dayDataList[currentDay]["startSelected"] = "start-date";
-  localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+  updateGameData("dayDataList", dayDataList);
   switchDay(currentDay);
   colourDayTab(currentDay);
 }
@@ -1043,7 +1041,7 @@ function switchStartYear() {
       newDate = getOffsetDate(newDate, 0, timeZone);
       newDate.setUTCFullYear(year);
       dayDataList[currentDay]["startDate"] = getOffsetDate(newDate, 0, -timeZone);
-      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+      updateGameData("dayDataList", dayDataList);
       switchDay(currentDay);
     }
   } else {
@@ -1059,7 +1057,7 @@ function switchStartMonth() {
       newDate = getOffsetDate(newDate, 0, timeZone);
       newDate.setUTCMonth(month - 1);
       dayDataList[currentDay]["startDate"] = getOffsetDate(newDate, 0, -timeZone);
-      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+      updateGameData("dayDataList", dayDataList);
       switchDay(currentDay);
     }
   } else {
@@ -1075,7 +1073,7 @@ function switchStartDay() {
       newDate = getOffsetDate(newDate, 0, timeZone);
       newDate.setUTCDate(day);
       dayDataList[currentDay]["startDate"] = getOffsetDate(newDate, 0, -timeZone);
-      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+      updateGameData("dayDataList", dayDataList);
       switchDay(currentDay);
     }
   } else {
@@ -1095,7 +1093,7 @@ function switchStartTime() {
       newDate.setUTCHours(hours);
       newDate.setUTCMinutes(minutes);
       dayDataList[currentDay]["startDate"] = getOffsetDate(newDate, 0, -timeZone);
-      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+      updateGameData("dayDataList", dayDataList);
       switchDay(currentDay);
     }
   } else {
@@ -1120,7 +1118,7 @@ function switchEndPost() {
     dayDataList[currentDay]["endPost"] = parseInt(post);
   }
   dayDataList[currentDay]["endSelected"] = "end-post";
-  localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+  updateGameData("dayDataList", dayDataList);
   switchDay(currentDay);
   colourDayTab(currentDay);  
 }
@@ -1131,7 +1129,7 @@ function switchEndDate() {
     dayDataList[currentDay] = {};
   }
   dayDataList[currentDay]["endSelected"] = "end-date";
-  localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+  updateGameData("dayDataList", dayDataList);
   switchDay(currentDay);
   colourDayTab(currentDay);
 }
@@ -1144,7 +1142,7 @@ function switchEndYear() {
       newDate = getOffsetDate(newDate, 0, timeZone);
       newDate.setUTCFullYear(year);
       dayDataList[currentDay]["endDate"] = getOffsetDate(newDate, 0, -timeZone);
-      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+      updateGameData("dayDataList", dayDataList);
       switchDay(currentDay);
     }
   } else {
@@ -1160,7 +1158,7 @@ function switchEndMonth() {
       newDate = getOffsetDate(newDate, 0, timeZone);
       newDate.setUTCMonth(month - 1);
       dayDataList[currentDay]["endDate"] = getOffsetDate(newDate, 0, -timeZone);
-      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+      updateGameData("dayDataList", dayDataList);
       switchDay(currentDay);
     }
   } else {
@@ -1176,7 +1174,7 @@ function switchEndDay() {
       newDate = getOffsetDate(newDate, 0, timeZone);
       newDate.setUTCDate(day);
       dayDataList[currentDay]["endDate"] = getOffsetDate(newDate, 0, -timeZone);
-      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+      updateGameData("dayDataList", dayDataList);
       switchDay(currentDay);
     }
   } else {
@@ -1196,7 +1194,7 @@ function switchEndTime() {
       newDate.setUTCHours(hours);
       newDate.setUTCMinutes(minutes);
       dayDataList[currentDay]["endDate"] = getOffsetDate(newDate, 0, -timeZone);
-      localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+      updateGameData("dayDataList", dayDataList);
       switchDay(currentDay);
     }
   } else {
@@ -1205,7 +1203,7 @@ function switchEndTime() {
 }
 
 function promptAddGm() {
-  newGm = prompt("Enter the name of the GM you want to add");
+  var newGm = prompt("Enter the name of the GM you want to add");
   if (newGm) {
     addGm(newGm);
   }
@@ -1213,7 +1211,7 @@ function promptAddGm() {
 
 function confirmPaste() {
   $("#paste-wrapper").slideUp();
-  importedPlayers = $("#paste-area").val().split("\n");
+  var importedPlayers = $("#paste-area").val().split("\n");
   for (var i = 0; i < importedPlayers.length; i++) {
     if (importedPlayers[i].indexOf(".") >= 0) {
       importedPlayers[i] = importedPlayers[i].split(".")[1];
@@ -1229,44 +1227,37 @@ function confirmPaste() {
   }
 }
 
-function handleRemovePlayer(removePlayerButton) {
-  var oldName = removePlayerButton.text();
+function handleEditPlayer(editPlayerButton) {
+  var oldName = editPlayerButton.text();
   var newName = prompt("Enter new player name.", oldName);
   if (newName) {
-    editPlayerName(oldName, newName);
-    removePlayerButton.text(newName);
-    removePlayerButton.parents(".player-block").attr("name", newName);
+    updatePlayerName(oldName, newName);
+    editPlayerButton.text(newName);
+    editPlayerButton.parents(".player-block").attr("name", newName);
   } else if (newName == "") {
     removePlayer(oldName);
   }
 }
 
-function editPlayerName(oldName, newName) {
+function updatePlayerName(oldName, newName) {
   var i = $.inArray(oldName, playerNameList);
   playerNameList[i] = newName;
-  localStorage.setItem("playerNameList" + threadId, JSON.stringify(playerNameList));
+  updateGameData("playerNameList", playerNameList);
   if (subNameList.hasOwnProperty(oldName)) {
     subNameList[newName] = subNameList[oldName];
     delete subNameList[oldName];
-    localStorage.setItem("subNameList" + threadId, JSON.stringify(subNameList));
+    updateGameData("subNameList", subNameList);
   }
-  if (playerStatusList.hasOwnProperty(oldName)) {
-    playerStatusList[newName] = playerStatusList[oldName];
-    delete playerStatusList[oldName];
-    localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
-  }
+  playerStatusList[newName] = playerStatusList[oldName];
+  delete playerStatusList[oldName];
+  updateGameData("playerStatusList", playerStatusList);
   for (var i in unrecognisedVoterList) {
     $(".unrecognised-voter[name='" + oldName + "']").attr("name", newName);
-    if (diceCoefficient(unrecognisedVoterList[i], newName) > 0.9) {
-      unrecognisedVoterList.splice(i, 1);
-      localStorage.setItem("unrecognisedVoterList" + threadId, JSON.stringify(unrecognisedVoterList));
-      $(".unrecognised-voter[name='" + newName + "']").removeClass("unrecognised-voter");
-      break;
-    }
   }
+  recognisePlayer(newName);
 }
 
-function getTimeString(date) {
+function formatTimeString(date) {
   var hours = date.getUTCHours() + "";
   var minutes = date.getUTCMinutes() + "";
   if (hours.length == 1) {
@@ -1314,9 +1305,9 @@ function switchDay(day) {
     }
     var startTime = getOffsetDate(new Date(dayDataList[day]["startDate"]), 0, timeZone);
     $("#start-year").text(startTime.getUTCFullYear());
-    $("#start-month").text(pad2Digits(startTime.getUTCMonth() + 1));
-    $("#start-day").text(pad2Digits(startTime.getUTCDate()));
-    $("#start-time").text(getTimeString(startTime));
+    $("#start-month").text(padTo2Digits(startTime.getUTCMonth() + 1));
+    $("#start-day").text(padTo2Digits(startTime.getUTCDate()));
+    $("#start-time").text(formatTimeString(startTime));
     if (dayDataList[day]["startSelected"]) {
       $("#" + dayDataList[day]["startSelected"]).addClass("boundary-option-selected");
     }
@@ -1330,9 +1321,9 @@ function switchDay(day) {
     }
     var endTime = getOffsetDate(new Date(dayDataList[day]["endDate"]), 0, timeZone);
     $("#end-year").text(endTime.getUTCFullYear());
-    $("#end-month").text(pad2Digits(endTime.getUTCMonth() + 1));
-    $("#end-day").text(pad2Digits(endTime.getUTCDate()));
-    $("#end-time").text(getTimeString(endTime));
+    $("#end-month").text(padTo2Digits(endTime.getUTCMonth() + 1));
+    $("#end-day").text(padTo2Digits(endTime.getUTCDate()));
+    $("#end-time").text(formatTimeString(endTime));
   }
   if (savedTallyList[day]) {
     $("#tally-body").html(tallyToHtml(savedTallyList[day]));
@@ -1344,18 +1335,18 @@ function switchDay(day) {
 function toggleTallyDisplay(toggleButton) {
   if (gameSettings["popoutTally"]) {
     gameSettings["popoutTally"] = "";
-    localStorage.setItem("gameSettings" + threadId, JSON.stringify(gameSettings));
+    updateGameData("gameSettings", gameSettings);
     $("#tally-container").removeClass("floating");
     toggleButton.text("Pop out");
   } else {
     gameSettings["popoutTally"] = "1";
-    localStorage.setItem("gameSettings" + threadId, JSON.stringify(gameSettings));
+    updateGameData("gameSettings", gameSettings);
     $("#tally-container").addClass("floating");
     toggleButton.text("Close");
   }
 }
 
-function addDayTabGui(day) {
+function drawDayTab(day) {
   $("<div />", {
     class: "day-tab",
     name: day,
@@ -1366,17 +1357,17 @@ function addDayTabGui(day) {
 function deleteDayData(day) {
   if (dayDataList[day]) {
     dayDataList.splice(day, 1);
-    localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+    updateGameData("dayDataList", dayDataList);
   }
   if (savedTallyList[day]) {
     savedTallyList.splice(day, 1);
-    localStorage.setItem("savedTallyList" + threadId, JSON.stringify(savedTallyList));
+    updateGameData("savedTallyList", savedTallyList);
   }
 }
 
 function updateTally() {
   if (playerNameList.length > 0) {
-    generateNicknames();
+    generateNicknames(playerNameList);
   }
   var start = 1;
   var end = 200000;
@@ -1392,16 +1383,17 @@ function updateTally() {
     end = new Date(dayDataList[currentDay]["endDate"]);
     end.setUTCSeconds(59, 1000);
   }
+  parseAllVotes();
   var tally = getTallyForRange(start, end, currentDay);
   savedTallyList[currentDay] = tally;
-  localStorage.setItem("savedTallyList" + threadId, JSON.stringify(savedTallyList));
+  updateGameData("savedTallyList", savedTallyList);
   $("#tally-body").html(tallyToHtml(tally));
 }
 
 function copyBbcodeTally() {
   if (savedTallyList[currentDay]) {
     $("#fmu-main-container").append("<textarea id='data-container'></textarea>");
-    $("#data-container").val(tallyToBbcode(savedTallyList[currentDay]));
+    $("#data-container").val(tallyToBbcode(savedTallyList[currentDay], currentDay));
     $("#data-container").select();
     document.execCommand("copy");
     $("#data-container").remove();
@@ -1412,17 +1404,28 @@ function copyVoteLog() {
   $("#fmu-main-container").append("<textarea id='data-container'></textarea>");
   var start = 1;
   var end = 200000;
-  if (dayDataList[currentDay] && dayDataList[currentDay]["startSelected"] == "start-post") {
+  if (dayDataList[currentDay]["startSelected"] == "start-post") {
     start = parseInt(dayDataList[currentDay]["startPost"]);
+  } else if (dayDataList[currentDay]["startSelected"] == "start-date") {
+    start = new Date(dayDataList[currentDay]["startDate"]);
+    start.setUTCSeconds(0, 0);
   }
   if (dayDataList[currentDay] && dayDataList[currentDay]["endSelected"] == "end-post") {
     end = parseInt(dayDataList[currentDay]["endPost"]);
+  } else if (dayDataList[currentDay]["endSelected"] == "end-date") {
+    end = new Date(dayDataList[currentDay]["endDate"]);
+    end.setUTCSeconds(59, 1000);
   }
+  parseAllVotes();
   var voteLog = getVoteLogForRange(start, end);
   $("#data-container").val(voteLog);
   $("#data-container").select();
   document.execCommand("copy");
   $("#data-container").remove();
+}
+
+function updateGameData(field, object) {
+  localStorage.setItem(field + threadId, JSON.stringify(object));
 }
 
 function toggleGameConfig(toggleButton) {
@@ -1445,14 +1448,14 @@ function togglePlayerState(toggleButton) {
     } else {
       playerStatusList[toggleButton.parent().attr("name")] = currentDay * 2 - 1;
     }
-    localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
+    updateGameData("playerStatusList", playerStatusList);
     toggleButton.closest(".player-block").removeClass("alive-player").addClass("dead-player");
     toggleButton.text(getLifeStatus(currentDay));
     toggleButton.closest(".player-block").find(".death-time").text(currentDay);
     
   } else {
     playerStatusList[toggleButton.parent().attr("name")] = 0;
-    localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
+    updateGameData("playerStatusList", playerStatusList);
     toggleButton.closest(".player-block").removeClass("dead-player").addClass("alive-player");
     toggleButton.text(getLifeStatus(0));
   }
@@ -1460,15 +1463,16 @@ function togglePlayerState(toggleButton) {
 }
 
 function toggleDeathPhase(toggleButton) {
-  if (toggleButton.text() == "night") {
-    toggleButton.text(getPhaseName(playerStatusList[toggleButton.closest(".player-block").attr("name")]));
-    playerStatusList[toggleButton.closest(".player-block").attr("name")] -= 1;
-    localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
+  var playerName = toggleButton.closest(".player-block").attr("name");
+  if (playerStatusList[playerName] % 2 == 0) {
+    //Currently night
+    playerStatusList[playerName] -= 1;
+    updateGameData("playerStatusList", playerStatusList);
     toggleButton.text("day");
   } else {
-    toggleButton.text(getPhaseName(playerStatusList[toggleButton.closest(".player-block").attr("name")]));
-    playerStatusList[toggleButton.closest(".player-block").attr("name")] += 1;
-    localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
+    //Currently day
+    playerStatusList[playerName] += 1;
+    updateGameData("playerStatusList", playerStatusList);
     toggleButton.text("night");
   }
 }
@@ -1483,7 +1487,7 @@ function changeDeathTime(toggleButton) {
       } else {
         playerStatusList[toggleButton.closest(".player-block").attr("name")] = newState * 2 - 1;
       }
-      localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
+      updateGameData("playerStatusList", playerStatusList);
       toggleButton.text(newState);
     }
   }
@@ -1492,9 +1496,9 @@ function changeDeathTime(toggleButton) {
 function changeDayCount(change) {
   if (change > 0) {
     var newDay = dayDataList.length;
-    addDayTabGui(newDay);
+    drawDayTab(newDay);
     initialiseDayData(newDay);
-    localStorage.setItem("dayDataList" + threadId, JSON.stringify(dayDataList));
+    updateGameData("dayDataList", dayDataList);
     colourDayTab(newDay);
     switchDay(newDay);
   } else {
@@ -1528,9 +1532,9 @@ function colourDayTab(day) {
 function getCombinedData() {
   var combinedData = {};
   $(".full-save, .partial-save").each(function() {
-    pg = $(this).text();
-    //This 'concatenates' two objects
-    jQuery.extend(combinedData, getPageData(pg));
+    var page = $(this).text();
+    //This combines two objects into the first
+    jQuery.extend(combinedData, getPageData(page));
   });
   return combinedData;
 }
@@ -1607,9 +1611,8 @@ function compareDates(a, b) {
 }
 
 function getTallyForRange(start, end, day) {
-  parseAllVotes();
   var playerVotes = {};
-  var totalVotes = {};
+  var tally = {};
   Object.keys(recognisedVoteList).forEach(function(post) {
     post = parseInt(post);
     if (start instanceof Date) {
@@ -1631,29 +1634,39 @@ function getTallyForRange(start, end, day) {
       }
     }
     var vote = recognisedVoteList[post];
-    if (playerStatusList[vote["user"]] != 0 && playerStatusList[vote["user"]] < day * 2) {
+    var user = vote["user"];
+    if (!isAlive(vote["user"], day)) {
       //Throwing out votes from dead players
       return;
     }
-    var voteType = vote["type"];
     if (!playerVotes[vote["user"]]) {
       if (playerNameList.length > 0 && $.inArray(vote["user"], playerNameList) == -1) {
-        registerUnrecognisedVoter(vote["user"]);
+        for (var s in subNameList) {
+          subNameList[s];
+          if ($.inArray(user, subNameList[s]) >= 0) {
+            user = s;
+            break;
+          }
+        }
+        if (vote["user"] == user) {
+          //Did not match to sub
+          registerUnrecognisedVoter(vote["user"]);
+        }
       }
-      playerVotes[vote["user"]] = {};
+      playerVotes[user] = {};
     }
-    if (!playerVotes[vote["user"]]["post"] || parseInt(post) > playerVotes[vote["user"]]["post"]) {
-      playerVotes[vote["user"]]["post"] = post;
-      playerVotes[vote["user"]]["link"] = vote["link"];
-      if (voteType == 2 || voteType == 1) {
-        playerVotes[vote["user"]]["target"] = vote["target"];
-      } else if (voteType == -1) {
-        playerVotes[vote["user"]]["target"] = "";
+    if (!playerVotes[user]["post"] || post > playerVotes[user]["post"]) {
+      playerVotes[user]["post"] = post;
+      playerVotes[user]["link"] = vote["link"];
+      if (vote["type"] == 2 || vote["type"] == 1) {
+        playerVotes[user]["target"] = vote["target"];
+      } else if (vote["type"] == -1) {
+        playerVotes[user]["target"] = "";
       }
     }
   });
   for (var i in playerNameList) {
-    if (playerStatusList[playerNameList[i]] != 0 && playerStatusList[playerNameList[i]] < day * 2) {
+    if (!isAlive(playerNameList[i], day)) {
       continue;
     }
     if (!playerVotes.hasOwnProperty(playerNameList[i])) {
@@ -1668,22 +1681,40 @@ function getTallyForRange(start, end, day) {
     return playerVotes[a]["post"] - playerVotes[b]["post"];
   }).forEach(function(user) {
     var target = playerVotes[user]["target"];
-    if (!totalVotes[target]) {
-      totalVotes[target] = [];
+    if (!tally[target]) {
+      tally[target] = [];
     }
-    totalVotes[target].push([user, playerVotes[user]["post"], playerVotes[user]["link"]]);
+    tally[target].push([user, playerVotes[user]["post"], playerVotes[user]["link"]]);
   });
-  return totalVotes;
+  return tally;
 }
 
+//Takes a range and returns a plaintext representation of all votes in that range
 function getVoteLogForRange(start, end) {
-  parseAllVotes();
   var voteLog = "";
   Object.keys(recognisedVoteList).sort(function(a, b) {
+    //Sort by post number
     return a - b;
-  }).filter(function(post) {
-    return post >= start && post <= end;
   }).forEach(function(post) {
+    //Filtering for range
+    if (start instanceof Date) {
+      if (compareDates(start, recognisedVoteList[post]["time"]) > 0) {
+        return;
+      }
+    } else {
+      if (start > post) {
+        return;
+      }
+    }
+    if (end instanceof Date) {
+      if (compareDates(end, recognisedVoteList[post]["time"]) < 0) {
+        return;
+      }
+    } else {
+      if (end < post) {
+        return;
+      }
+    }
     var type = recognisedVoteList[post]["type"];
     voteLog += "[" + post + "] ";
     voteLog += recognisedVoteList[post]["user"];
@@ -1693,17 +1724,31 @@ function getVoteLogForRange(start, end) {
       voteLog += " unvotes and votes " + recognisedVoteList[post]["target"];
     } else if (type == -1) {
       voteLog += " unvotes" + (recognisedVoteList[post]["target"] != null ? " " + recognisedVoteList[post]["target"] : "");
-    } else {
-      //Should not happen
-      voteLog += " exposes a bug in this script";
     }
     voteLog += " (" + getPostLink(recognisedVoteList[post]["link"]) + ")\n";
   });
   return voteLog;
 }
 
-function tallyToBbcode(tally) {
-  var bbcode = "Tally generated via Forum Mafia Utilities\n\n";
+function tallyToBbcode(tally, day) {
+  var bbcode = "Day " + day + " - ";
+  if (dayDataList[day]["startSelected"] == "start-post") {
+    bbcode += "Post " + dayDataList[day]["startPost"];
+  } else {
+    var startDate = new Date(dayDataList[day]["startDate"]).toUTCString().split(",").slice(1).join(" ").split(":");
+    startDate.pop();
+    bbcode += startDate.join(":").trim() + " UTC";
+  }
+  bbcode += " to ";
+  if (dayDataList[day]["endSelected"] == "end-post") {
+    bbcode += "Post " + dayDataList[day]["endPost"];
+  } else {
+    var endDate = new Date(dayDataList[day]["endDate"]).toUTCString().split(",").slice(1).join(" ").split(":");
+    endDate.pop();
+    bbcode += endDate.join(":").trim() + " UTC";
+  }
+  bbcode += " - Tally generated via Forum Mafia Utilities";
+  bbcode += "\n\n";
   var hasVotes = false;
   Object.keys(tally).filter(function(target) {
     return (target == "" ? false : true);
@@ -1738,6 +1783,7 @@ function tallyToBbcode(tally) {
     }
     bbcode += "[b]Yet to vote (" + voterList.length;
     if (voterList.length % 10 == 8) {
+      //Preventing conversion of "8)" to a smiley
       bbcode += "[u][/u]";
     }
     bbcode += ")[/b] - [size=1]" + voterList.join(", ") + "[/size]";
@@ -1780,24 +1826,24 @@ function registerUnrecognisedVoter(user) {
       if (diceCoefficient(playerNameList[i], user) > 0.9) {
         $(".player-block[name='" + playerNameList[i] + "'] .player-name").text(user);
         $(".player-block[name='" + playerNameList[i] + "']").attr("name", user);
-        editPlayerName(playerNameList[i], user);
+        updatePlayerName(playerNameList[i], user);
         recognisedVoter = true;
         return;
       }
     }
     if (!recognisedVoter) {
       unrecognisedVoterList.push(user);
-      localStorage.setItem("unrecognisedVoterList" + threadId, JSON.stringify(unrecognisedVoterList));
+      updateGameData("unrecognisedVoterList", unrecognisedVoterList);
     }
   }
 }
 
 function getBigrams(string) {
-  var getBigrams = [];
+  var bigrams = [];
   for (var i = 0; i < string.length - 1; i++) {
-    getBigrams.push(string.slice(i, i+2));
+    bigrams.push(string.slice(i, i+2));
   }
-  return getBigrams;
+  return bigrams;
 }
 
 function diceCoefficient(a, b) {
@@ -1872,21 +1918,26 @@ function matchPlayerByDay(string, day) {
 }
 
 function isAlive(player, day) {
-  return true;
+  if (playerStatusList[player] != 0 && playerStatusList[player] < day * 2) {
+    return false;
+  } else {
+    return true;
+  }
 }
 
 function addGm(gmName) {
   if ($.inArray(gmName, gmNameList) == -1) {
     gmNameList.push(gmName);
-    localStorage.setItem("gmNameList" + threadId, JSON.stringify(gmNameList));
-    addGmGui(gmName);
+    updateGameData("gmNameList", gmNameList);
+    drawGm(gmName);
     if (gmNameList.length == 1) {
+      //If there is now exactly 1 GM, then there were 0 before and data has not been generated yet
       generateData();
     }
   }
 }
 
-function addGmGui(gmName) {
+function drawGm(gmName) {
   $("<button />", {
     class: "gm-name input-button",
     text: gmName
@@ -1895,21 +1946,29 @@ function addGmGui(gmName) {
 
 function addPlayer(playerName) {
   if ($.inArray(playerName, playerNameList) == -1) {
+    //If and only if player is not already in player list, add player
     playerNameList.push(playerName);
-    localStorage.setItem("playerNameList" + threadId, JSON.stringify(playerNameList));
-    for (var i in unrecognisedVoterList) {
+    playerStatusList[playerName] = 0;
+    updateGameData("playerNameList", playerNameList);
+    updateGameData("playerStatusList", playerStatusList);
+    recognisePlayer(playerName);
+    drawPlayer(playerName);
+  }
+}
+
+//Checks the unrecognised voter list to see if it can match some new name and remove them from the unrecognised list
+function recognisePlayer(playerName) {
+  for (var i in unrecognisedVoterList) {
       if (diceCoefficient(unrecognisedVoterList[i], playerName) > 0.9) {
         unrecognisedVoterList.splice(i, 1);
-        localStorage.setItem("unrecognisedVoterList" + threadId, JSON.stringify(unrecognisedVoterList));
+        updateGameData("unrecognisedVoterList", unrecognisedVoterList);
         $(".unrecognised-voter[name='" + playerName + "']").removeClass("unrecognised-voter");
         break;
       }
     }
-    addPlayerGui(playerName);
-  }
 }
 
-function addPlayerGui(playerName) {
+function drawPlayer(playerName) {
   return $("<li />", {
     class: "player-block alive-player",
     name: playerName
@@ -1951,18 +2010,16 @@ function addPlayerGui(playerName) {
 }
 
 function removePlayer(playerName) {
-  index = $.inArray(playerName, playerNameList);
+  var index = $.inArray(playerName, playerNameList);
   if (index >= 0) {
     playerNameList.splice(index, 1);
-    localStorage.setItem("playerNameList" + threadId, JSON.stringify(playerNameList));
+    updateGameData("playerNameList", playerNameList);
     if (subNameList.hasOwnProperty(playerName)) {
       delete subNameList[playerName];
-      localStorage.setItem("subNameList" + threadId, JSON.stringify(subNameList));
+      updateGameData("subNameList", subNameList);
     }
-    if (playerStatusList.hasOwnProperty(playerName)) {
-      delete playerStatusList[playerName];
-      localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
-    }
+    delete playerStatusList[playerName];
+    updateGameData("playerStatusList", playerStatusList);
     $(".player-block[name='" + playerName + "']").remove();
   }
 }
@@ -1972,9 +2029,9 @@ function clearPlayers() {
   subNameList = {};
   playerNicknameList = {};
   playerStatusList = {};
-  localStorage.setItem("playerNameList" + threadId, JSON.stringify(playerNameList));
-  localStorage.setItem("subNameList" + threadId, JSON.stringify(subNameList));
-  localStorage.setItem("playerStatusList" + threadId, JSON.stringify(playerStatusList));
+  updateGameData("playerNameList", playerNameList);
+  updateGameData("subNameList", subNameList);
+  updateGameData("playerStatusList", playerStatusList);
   $("#player-list").text("");
 }
 
@@ -1986,11 +2043,11 @@ function addSub(playerName, subName) {
     return;
   }
   subNameList[playerName].push(subName);
-  localStorage.setItem("subNameList" + threadId, JSON.stringify(subNameList));
-  addSubGui(playerName, subName);
+  updateGameData("subNameList", subNameList);
+  drawSub(playerName, subName);
 }
 
-function addSubGui(playerName, subName) {
+function drawSub(playerName, subName) {
   if ($(".player-block[name='" + playerName + "'] .sub-list").text().length > 0) {
     $(".player-block[name='" + playerName + "'] .sub-list").append("<button class='sub-name input-button'>" + subName + "</button>");
   } else {
@@ -2006,14 +2063,16 @@ function removeSub(playerName, subName) {
       subNameList[playerName] = "";
       $(".player-block[name='" + playerName + "']").children(".sub-list").text("");
     }
-    localStorage.setItem("subNameList" + threadId, JSON.stringify(subNameList));
-    $(".player-block[name='" + playerName + "']").find(".sub-name").filter(function() {return $(this).text() == subName;}).remove();
+    updateGameData("subNameList", subNameList);
+    $(".player-block[name='" + playerName + "']").find(".sub-name").filter(function() {
+      return $(this).text() == subName;
+    }).remove();
   }
 }
 
-function generateNicknames() {
-  for (var i in playerNameList) {
-    var player = playerNameList[i];
+function generateNicknames(nameList) {
+  for (var i in nameList) {
+    var player = nameList[i];
     if (!playerNicknameList.hasOwnProperty(player)) {
       playerNicknameList[player] = [];
     }
@@ -2050,46 +2109,49 @@ function generateNicknames() {
   }
 }
 
+//Returns uppercase characters of a string
 function getUpperCase(string) {
-  var result = "";
+  var uppercaseString = "";
   for (var i in string) {
     var c = string.charAt(i);
     if (c.toUpperCase() == c.toLowerCase()) {
       continue;
     } else if (c == c.toUpperCase()) {
-      result += c;
+      uppercaseString += c;
     }
   }
-  return result;
+  return uppercaseString;
 }
 
+//Returns non-lowercase characters of a string
 function getNonLowerCase(string) {
-  var result = "";
+  var nonLowercaseString = "";
   for (var i in string) {
     var c = string.charAt(i);
     if (c == c.toUpperCase()) {
-      result += c;
+      nonLowercaseString += c;
     }
   }
-  return result;
+  return nonLowercaseString;
 }
 
+//Returns lowercase characters of a string
 function getLowerCase(string) {
-  var result = "";
+  var lowercaseString = "";
   for (var i in string) {
     var c = string.charAt(i);
     if (c.toUpperCase() == c.toLowerCase()) {
       continue;
     } else if (c == c.toLowerCase()) {
-      result += c;
+      lowercaseString += c;
     }
   }
-  return result;
+  return lowercaseString;
 }
 
 function validateTime(time) {
-  var cleanedTime = time.replace(":","").replace(" ","").replace("h","").replace(".","");
-  var validTime = parseInt(cleanedTime);
+  var sanitisedTime = time.replace(":","").replace(" ","").replace("h","").replace(".","");
+  var validTime = parseInt(sanitisedTime);
   if (validTime >= 100) {
     var hour = Math.floor(validTime / 100);
     var minute = validTime % 100;
@@ -2104,7 +2166,7 @@ function validateTime(time) {
         }
       }
     }
-  } else if (validTime < 60 && cleanedTime.charAt(0) == "0") {
+  } else if (validTime < 60 && sanitisedTime.charAt(0) == "0") {
     if (time.toLowerCase().indexOf("pm") >= 0) {
       return validTime + 1200;
     } else {
@@ -2130,7 +2192,7 @@ function padTime(time) {
   return paddedTime.substr(0, 2) + ":" + paddedTime.substr(2);
 }
 
-function pad2Digits(number) {
+function padTo2Digits(number) {
   var paddedNumber = number + "";
   while (paddedNumber.length < 2) {
     paddedNumber = "0" + paddedNumber;
@@ -2148,6 +2210,7 @@ function getOffsetDate(date, days, hours) {
   return new Date(date.getTime() + (days * 24 + hours) * 60 * 60 * 1000);
 }
 
+//Takes a forum date string such as "Today, Aug 8, 2016 09:30 PM" and converts into a JavaScript date object
 function parseDateFromString(string) {
   string = string.replace(/,/g, "");
   var date = new Date();
@@ -2197,7 +2260,7 @@ function getPostLink(postId) {
 }
 
 function getPageStatus(thread, page) {
-  numSaved = localStorage.getItem("pageStatus" + thread + "-" + page)
+  var numSaved = localStorage.getItem("pageStatus" + thread + "-" + page)
   if (!numSaved) {
     return 0;
   } else {
@@ -2247,6 +2310,7 @@ function generateData() {
         boldPost.each(function () {
           var htmlContent = $(this).html();
           if ($(this).children(".inlineimg").length > 0) {
+            //Replace smileys with their text representations
             var htmlContent = $("<b>" + $(this).html() + "</b>");
             htmlContent.children("[title='Surprised']").replaceWith(":o");
             htmlContent.children("[title='Broad Smile']").replaceWith(":D");
