@@ -347,7 +347,7 @@ GM_addStyle(`
 .dead-player .death-info {
   display: inline-block;
 }
-.death-phase {
+.death-info .death-phase {
   background-color: var(--light-color-highlighted);
   color: #333;
   margin-right: 0 !important;
@@ -356,7 +356,7 @@ GM_addStyle(`
   background-color: #b0bec5;
   color: #fff;
 }
-.death-time {
+.death-info .death-time {
   margin-left: 0 !important;
 }
 .dead-player .player-name {
@@ -387,566 +387,859 @@ li.player-block:hover .player-controls {
 }`);
 
 $(document).ready(function () {
-  gameData.init();
-  interface.init();
-
+  utilities.data.init();
+  utilities.ui.init();
+  utilities.control.init();
   if (gameSettings.scriptMode) {
-    interface.draw();
+    utilities.ui.draw();
+    utilities.control.update();
   } else {
-    interface.reset();
+    utilities.ui.reset();
+    utilities.control.reset();
   }
 });
 
-var interface = {
-  init: function() {
-    getFrontInterface().insertAfter("#qrform");
-    $("#edit-settings").click(function() {
-      $("#settings-display").slideToggle();
-    });
-    $("#toggle-script").on("click", function() {
-      toggleScriptMode($(this));
-    });
-    $("#toggle-bbcode-post-numbers").click(function() {
-      toggleBbcodePostNumbers($(this));
-    });
-    $("#night-buffer-time").click(function() {
-      var newBuffer = parseInt(prompt("Enter night buffer time in minutes"));
-      if (newBuffer > 0) {
-        scriptSettings.nightBufferTime = newBuffer;
-        localStorage.setItem("fmuSettings", JSON.stringify(scriptSettings));
-        $(this).text(newBuffer);
+var utilities = {
+  ui: {
+    init: function() {
+      getFrontInterface().insertAfter("#qrform");
+      if (scriptSettings.bbcodePostNumbers) {
+        $("#toggle-bbcode-post-numbers").text("On");
       }
-    });
-    $("#clear-data").click(function() {
-      if (confirm("Are you sure you want to reset all data?")) {
-        localStorage.clear();
+    },
+    draw: function() {
+      $("#script-manager").before("<div id='fmu-main-container'></div>");
+      $("<div />", {
+        id: "page-container"
+      })
+        .append($("<span />", {
+          id: "page-label",
+          text: "Page"
+        })).append($("<span />", {
+          id: "page-controls"
+        }))
+        .appendTo("#fmu-main-container");
+      $("<div />", {
+        id: "day-controls"
+      })
+        .append($("<div />", {
+          id: "add-day",
+          text: "+",
+          title: "Add a day"
+        }))
+        .append($("<span />", {
+          id: "day-tab-container"
+        }))
+        .append($("<div />", {
+          id: "remove-day",
+          text: "-",
+          title: "Remove a day"
+        }))
+        .appendTo("#fmu-main-container");
+      $("<div />", {
+        id: "day-area"
+      })
+        .append($("<div />", {
+          id: "tally-container"
+        })
+        .append($("<div />", {
+          id: "tally-wrapper"
+        })
+        .append($("<div />", {
+          id: "tally-body"
+        })))
+        .append($("<div />", {
+          id: "tally-controls"
+        })
+        .append($("<button />", {
+          class: "function-button",
+          id: "update-vote-record",
+          text: "Update"
+        }))
+        .append($("<button />", {
+          class: "function-button",
+          id: "toggle-vote-record-mode",
+          text: "Mode: Vote tally"
+        }))
+        .append($("<button />", {
+          class: "function-button",
+          id: "copy-bbcode",
+          text: "Copy BBCode tally"
+        }))
+        .append($("<button />", {
+          class: "function-button",
+          id: "copy-vote-log",
+          text: "Copy vote log"
+        }))
+        .append($("<button />", {
+          class: "function-button",
+          id: "toggle-tally-display",
+          text: "Pop out",
+          title: "Toggle floating display on/off"
+        }))))
+        .append($("<br />"))
+        .append($("<div />", {
+          id: "day-ranges"
+        })
+        .append($("<span />", {
+          text: "Start"
+        }))
+        .append($("<button />", {
+          id: "start-post",
+          class: "boundary-option input-button edit-button"
+        }))
+        .append($("<div />", {
+          class: "boundary-option",
+          id: "start-date"
+        })
+        .append($("<button />", {
+          class: "input-button edit-button",
+          id: "start-year"
+        }))
+        .append($("<button />", {
+          class: "input-button edit-button",
+          id: "start-month"
+        }))
+        .append($("<button />", {
+          class: "input-button edit-button",
+          id: "start-day"
+        }))
+        .append($("<button />", {
+          id: "start-time",
+          class: "input-button edit-button"
+        })))
+        .append($("<br />"))
+        .append($("<span />", {
+          text: "End"
+        }))
+        .append($("<button />", {
+          id: "end-post",
+          class: "boundary-option input-button edit-button"
+        }))
+        .append($("<div />", {
+          class: "boundary-option",
+          id: "end-date"
+        })
+        .append($("<button />", {
+          class: "input-button edit-button",
+          id: "end-year"
+        }))
+        .append($("<button />", {
+          class: "input-button edit-button",
+          id: "end-month"
+        }))
+        .append($("<button />", {
+          class: "input-button edit-button",
+          id: "end-day"
+        }))
+        .append($("<button />", {
+          id: "end-time",
+          class: "input-button edit-button"
+        }))))
+        .appendTo("#fmu-main-container");
+      $("<div />", {
+        id: "toggle-game-configuration-container"
+      })
+        .append($("<button />", {
+          class: "function-button",
+          id: "toggle-game-configuration",
+          text: "Show game configuration"
+        }))
+        .appendTo("#fmu-main-container");
+      $("<div />", {
+        id: "game-configuration"
+      })
+        .append($("<span />", {
+          text: "GM names"
+        }))
+        .append($("<span />", {
+          id: "gm-names"
+        }))
+        .append($("<button />", {
+          class: "function-button",
+          id: "add-gm",
+          text: "+",
+          title: "Add a new GM"
+        }))
+        .append($("<br />"))
+        .append($("<span />", {
+          text: "Night time"
+        }))
+        .append($("<button />", {
+          class: "input-button edit-button",
+          id: "nightfall-time",
+          text: padTime(gameSettings.nightfallTime)
+        }))
+        .append($("<div />", {
+          class: "vote-keywords"
+        })
+          .append($("<span />", {
+            text: "Unvote keyword"
+          }))
+          .append($("<button />", {
+            class: "input-button edit-button",
+            id: "unvote-keyword",
+            text: "unvote"
+          }))
+          .append($("<br />"))
+          .append($("<span />", {
+            text: "Vote keyword"
+          }))
+          .append($("<button />", {
+            class: "input-button edit-button",
+            id: "vote-keyword",
+            text: "vote"
+          })))
+        .append($("<br />"))
+        .append($("<span />", {
+          text: "Player names"
+        }))
+        .append($("<button />", {
+          class: "function-button",
+          id: "add-player",
+          text: "+",
+          title: "Add a new player"
+        }))
+        .append($("<button />", {
+          class: "function-button",
+          id: "import-players",
+          text: "Paste...",
+          title: "Add multiple players by pasting a list"
+        }))
+        .append($("<button />", {
+          class: "function-button",
+          id: "reset-players",
+          text: "Reset",
+          title: "Reset all players"
+        }))
+        .append($("<div />", {
+          id: "paste-wrapper"
+        })
+          .append($("<textarea />", {
+           id: "paste-area"
+          }))
+          .append($("<br />"))
+          .append($("<button />", {
+            class: "function-button",
+            id: "confirm-paste",
+            text: "Import players"
+          })))
+        .append($("<div />", {
+          id: "player-wrapper"
+        })
+        .append($("<ol />", {
+          id: "player-list"
+        })))
+      .appendTo($("#fmu-main-container"));
+      utilities.ui.pages.init();
+      utilities.ui.days.init();
+      utilities.ui.gms.init();
+      utilities.ui.players.init();
+      if (gameSettings.scriptMode == 2) {
+        $("#game-configuration").show();
+        $("#toggle-game-configuration").text("Hide game configuration");
+      }
+      $("#vote-keyword").text(gameSettings.voteKeyword);
+      $("#unvote-keyword").text(gameSettings.unvoteKeyword);
+      $("#tally-body").on("click",".unrecognised-voter", function() {
+        var playerName = $(this).attr("name");
+        utilities.control.players.add(playerName);
+      })
+      $("#update-vote-record").on("click", updateVoteRecord);
+      if (gameSettings.voteRecordMode == "votelog") {
+        $("#toggle-vote-record-mode").text("Mode: Vote log");
+      }
+      $("#toggle-vote-record-mode").on("click", function() {
+        toggleVoteRecordMode($(this));
+      });
+      $("#copy-bbcode").on("click", copyBbcodeTally);
+      $("#copy-vote-log").on("click", copyVoteLog);
+      $("#toggle-tally-display").on("click", function() {
+        toggleTallyDisplay($(this));
+      });
+      if (gameSettings.popoutTally) {
+        gameSettings.popoutTally = "";
+        toggleTallyDisplay($("#toggle-tally-display"));
+      }
+      $("#toggle-game-configuration").on("click", function() {
+        toggleGameConfig($(this));
+      });
+      $("#add-day").on("click", function() {
+        changeDayCount(1);
+      });
+      $("#remove-day").on("click", function() {
+        changeDayCount(-1);
+      });
+      $("#day-tab-container").on("click", ".day-tab", function() {
+        switchDay($(this).attr("name"));
+      });
+      $("#start-post").on("click", switchStartPost);
+      $("#start-year").on("click", switchStartYear);
+      $("#start-month").on("click", switchStartMonth);
+      $("#start-day").on("click", switchStartDay);
+      $("#start-time").on("click", switchStartTime);
+      $("#end-post").on("click", switchEndPost);
+      $("#end-year").on("click", switchEndYear);
+      $("#end-month").on("click", switchEndMonth);
+      $("#end-day").on("click", switchEndDay);
+      $("#end-time").on("click", switchEndTime);
+      $("#add-gm").on("click", promptAddGm);
+      $("#gm-names").on("click", ".gm-name", function() {
+        gmNameList.splice($.inArray($(this).text(), gmNameList), 1);
+        updateGameData("gmNameList", gmNameList);
+        $(this).remove();
+      });
+      $("#nightfall-time").on("click", function() {
+        changeNightfallTime($(this));
+      });
+      $("#vote-keyword").on("click", function() {
+        var newKeyword = prompt("Enter new vote keyword");
+        if (newKeyword) {
+          gameSettings.voteKeyword = newKeyword;
+          updateGameData("gameSettings", gameSettings);
+          $(this).text(newKeyword);
+        }
+      });
+      $("#unvote-keyword").on("click", function() {
+        var newKeyword = prompt("Enter new unvote keyword");
+        if (newKeyword) {
+          gameSettings.unvoteKeyword = newKeyword;
+          updateGameData("gameSettings", gameSettings);
+          $(this).text(newKeyword);
+        }
+      });
+      $("#import-players").on("click", function() {
+        $("#paste-wrapper").slideToggle();
+        $("#paste-area").focus();
+      })
+      $("#confirm-paste").on("click", confirmPaste);
+      if (gmNameList.length > 0) {
+        generateData();
+      }
+    },
+    days: {
+      init: function() {
+        for (var day = 1; day < dayDataList.length; day++) {
+          utilities.ui.days.draw(day);
+        }
+        switchDay(currentDay);
+      },
+      draw: function(day) {
+        drawDayTab(day);
+        colourDayTab(day);
+      }
+    },
+    gms: {
+      init: function() {
+        if (gmNameList.length > 0) {
+          for (var i = 0; i < gmNameList.length; i++) {
+            drawGm(gmNameList[i]);
+          }
+        }
+      }
+    },
+    pages: {
+      init: function() {
+        for (var page = 1; page <= pageTotal; page++) {
+          var pageStatus = getPageStatus(threadId, page);
+          var newBlock = $("<a />", {
+            class: "page-link",
+            href: getPageLink(threadId, page),
+            page: page,
+            text: page
+          }).appendTo($("#page-controls"));
+          if (page == currentPage) {
+            newBlock.addClass("page-selected");
+          }
+          if (pageStatus == scriptSettings.numberPostsPerPage || (currentPage == pageTotal && pageStatus == numberPostsOnPage)) {
+            newBlock.addClass("full-save");
+          } else if (pageStatus > 0) {
+            newBlock.addClass("partial-save");
+          } else {
+            newBlock.addClass("empty-save");
+          }
+        }
+      }
+    },
+    players: {
+      init: function() {
+        Object.keys(utilities.data.players.list).forEach(function(playerName) {
+          var playerBlock = utilities.ui.players.add(playerName);
+          utilities.ui.players.updateState(playerName);
+          for (var s in utilities.data.players.list[playerName].subs) {
+            utilities.ui.players.subs.add(playerName, utilities.data.players.list[playerName].subs[s]);
+          }
+        });
+      },
+      list: {},
+      add: function(playerName) {
+        var playerBlock = $("<li />", {
+          class: "player-block alive-player",
+          name: playerName
+        })
+          .append($("<button />", {
+            class: "player-name input-button edit-button",
+            text: playerName,
+            title: "Edit player name"
+          }))
+          .append($("<button />", {
+            class: "player-state input-button",
+            text: "alive",
+            title: "Toggle whether player is alive or dead"
+          }))
+          .append($("<div />", {
+            class: "death-info"
+          })
+          .append($("<button />", {
+            class: "death-phase input-button",
+            text: "night",
+            title: "Toggle between day and night"
+          }))
+          .append($("<button />", {
+            class: "death-time input-button edit-button",
+            text: "1",
+            title: "Day/night of death"
+          })))
+          .append($("<span />", {
+            class: "sub-list"
+          }))
+          .append($("<span />", {
+            class: "player-controls"
+          })
+          .append($("<button />", {
+            class: "add-sub function-button",
+            text: "+Alias",
+            title: "Add a new alias for this player"
+          }))
+          .append($("<button />", {
+            class: "remove-player function-button",
+            text: "-",
+            title: "Remove this player"
+          })))
+        .appendTo("#player-list");
+        utilities.ui.players.list[playerName] = playerBlock;
+      },
+      //TODO: ui.players
+      rename: function(oldName, newName) {
+        utilities.ui.players.list[newName] = utilities.ui.players.list[oldName];
+        delete utilities.ui.players.list[oldName];
+        var playerBlock = utilities.ui.players.list[newName];
+        playerBlock.find(".player-name").text(newName);
+        playerBlock.attr("name", newName);
+        for (var i in unrecognisedVoterList) {
+          $(".unrecognised-voter[name='" + oldName + "']").attr("name", newName);
+        }
+      },
+      updateState: function(playerName) {
+        var playerStatus = utilities.data.players.list[playerName].status;
+        var playerBlock = this.list[playerName];
+        playerBlock.find(".player-state").text(getLifeStatus(playerStatus));
+        playerBlock.find(".death-phase").text(getPhaseName(playerStatus));
+        playerBlock.find(".death-time").text(getDeathTime(playerStatus));
+        if (playerStatus == 0) {
+          playerBlock.addClass("alive-player").removeClass("dead-player");
+        } else {
+          playerBlock.addClass("dead-player").removeClass("alive-player");
+        }
+      },
+      subs: {
+        add: function(playerName, subName) {
+          var playerBlock = utilities.ui.players.list[playerName];
+          if (playerBlock.find(".sub-list").text().length == 0) {
+            $("<span />", {
+              text: "subbing for"
+            }).appendTo(playerBlock.find(".sub-list"));
+          }
+          $("<button />", {
+            class: "sub-name input-button",
+            text: subName
+          })
+          .appendTo(playerBlock.find(".sub-list"));
+        },
+        remove: function(playerName, subName) {
+          var playerBlock = utilities.ui.players.list[playerName];
+          if (utilities.data.players.list[playerName].subs.length == 0) {
+            playerBlock.children(".sub-list").text("");
+          } else {
+            playerBlock.find(".sub-name").filter(function() {
+              return $(this).text() == subName;
+            }).remove();
+          }
+        }
+      },
+      remove: function(playerName) {
+        this.list[playerName].remove();
+      },
+      reset: function() {
+        $("#player-list").text("");
+      }
+    },
+    reset: function() {
+      $("#fmu-main-container").remove();
+      $("#toggle-script").text("Start game");
+    }
+  },
+  control: {
+    init: function() {
+      $("#edit-settings").on("click", function() {
+        $("#settings-display").slideToggle();
+      });
+      $("#toggle-script").on("click", function() {
+        toggleScriptMode($(this));
+      });
+      $("#toggle-bbcode-post-numbers").on("click", function() {
+        toggleBbcodePostNumbers($(this));
+      });
+      $("#night-buffer-time").on("click", function() {
+        var newBuffer = parseInt(prompt("Enter night buffer time in minutes"));
+        if (newBuffer > 0) {
+          scriptSettings.nightBufferTime = newBuffer;
+          localStorage.setItem("fmuSettings", JSON.stringify(scriptSettings));
+          $(this).text(newBuffer);
+        }
+      });
+      $("#clear-data").on("click", function() {
+        if (confirm("Are you sure you want to reset all data?")) {
+          localStorage.clear();
+          scriptSettings = {
+            "bbcodePostNumbers": 0, //BBCode post numbers
+            "nightBufferTime": 10, //How long a night lasts - used for automatically filling in start times
+            "numberPostsPerPage": 60 //Maximum number of posts per page - Forum default is 60
+          };
+          utilities.data.reset();
+          utilities.ui.reset();
+        }
+      });
+    },
+    update: function() {
+      $("#reset-players").on("click", utilities.control.players.reset);
+      $("#add-player").on("click", function() {
+        var newPlayer = prompt("Enter the name of the player you want to add");
+        if (newPlayer) {
+          utilities.control.players.add(newPlayer);
+        }
+      });
+      $("#player-list").on("click", ".player-name", function() {
+        var oldName = $(this).text();
+        var newName = prompt("Enter new player name.", oldName);
+        if (newName) {
+          utilities.control.players.rename(oldName, newName);
+        } else if (newName == "") {
+          utilities.control.players.remove(oldName);
+        }
+      });
+      $("#player-list").on("click", ".player-state", function() {
+        var playerName = $(this).parent().attr("name");
+        if (utilities.data.players.list[playerName].status > 0) {
+          utilities.control.players.updateState(playerName, 0);
+        } else {
+          utilities.control.players.updateState(playerName, currentDay * 2);
+        }
+      });
+      $("#player-list").on("click", ".death-phase", function() {
+        var playerName = $(this).parents(".player-block").attr("name");
+        var playerState = utilities.data.players.list[playerName].status;
+        if (playerState % 2 == 0) {
+          utilities.control.players.updateState(playerName, playerState - 1);
+        } else {
+          utilities.control.players.updateState(playerName, playerState + 1);
+        }
+      });
+      $("#player-list").on("click", ".death-time", function() {
+        var playerName = $(this).parents(".player-block").attr("name");
+        var newState = parseInt(prompt("Enter the day/night of death"));
+        if (newState > 0) {
+          if (utilities.data.players.list[playerName].status % 2 == 0) {
+            utilities.control.players.updateState(playerName, newState * 2);
+          } else {
+            utilities.control.players.updateState(playerName, newState * 2 - 1);
+          }
+        }
+      });
+      $("#player-list").on("click", ".sub-name", function() {
+        var playerName = $(this).parents(".player-block").attr("name");
+        var subName = $(this).text();
+        utilities.control.players.subs.remove(playerName, subName);
+      });
+      $("#player-list").on("click", ".add-sub", function() {
+        var playerName = $(this).parents(".player-block").attr("name");
+        var subName = prompt("Enter alternative name for player - e.g. subs or nicknames");
+        if (subName) {
+          utilities.control.players.subs.add(playerName, subName);
+        }
+      });
+      $("#player-list").on("click", ".remove-player", function() {
+        var playerName = $(this).parents(".player-block").attr("name");
+        utilities.control.players.remove(playerName);
+      });
+    },
+    players: {
+      //TODO: control.players
+      add: function(playerName) {
+        if (!utilities.data.players.list.hasOwnProperty(playerName)) {
+          //If player is not already in player list, add player
+          utilities.data.players.add(playerName);
+          player.recognise(playerName);
+          utilities.ui.players.add(playerName);
+        }
+      },
+      updateState: function(playerName, newState) {
+        utilities.data.players.updateState(playerName, newState);
+        utilities.ui.players.updateState(playerName);
+      },
+      subs: {
+        add: function(playerName, subName) {
+          utilities.data.players.addSub(playerName, subName);
+          utilities.ui.players.subs.add(playerName, subName);
+        },
+        remove: function(playerName, subName) {
+          utilities.data.players.removeSub(playerName, subName);
+          utilities.ui.players.subs.remove(playerName, subName);
+        }
+      },
+      rename: function(oldName, newName) {
+        if (utilities.data.players.rename(oldName, newName)) {
+          utilities.ui.players.rename(oldName, newName);
+        }
+      },
+      remove: function(playerName) {
+        if (utilities.data.players.list.hasOwnProperty(playerName)) {
+          utilities.data.players.remove(playerName);
+          utilities.ui.players.remove(playerName);
+        }
+      },
+      reset: function() {
+        utilities.data.players.reset();
+        utilities.ui.players.reset();
+      }
+    },
+    reset: function() {
+      //Reset
+    }
+  },
+  data: {
+    init: function() {
+      threadId = getThreadId();
+      if (localStorage.getItem("fmuSettings")) {
+        scriptSettings = JSON.parse(localStorage.getItem("fmuSettings"));
+      } else {
         scriptSettings = {
           "bbcodePostNumbers": 0, //BBCode post numbers
           "nightBufferTime": 10, //How long a night lasts - used for automatically filling in start times
           "numberPostsPerPage": 60 //Maximum number of posts per page - Forum default is 60
-        };
-        gameData.reset();
-        interface.reset();
+        }
       }
-    });
-    if (scriptSettings.bbcodePostNumbers) {
-      $("#toggle-bbcode-post-numbers").text("On");
-    }
-  },
-  draw: function() {
-    $("#script-manager").before("<div id='fmu-main-container'></div>");
-    $("<div />", {
-      id: "page-container"
-    })
-      .append($("<span />", {
-        id: "page-label",
-        text: "Page"
-      })).append($("<span />", {
-        id: "page-controls"
-      }))
-      .appendTo("#fmu-main-container");
-    $("<div />", {
-      id: "day-controls"
-    })
-      .append($("<div />", {
-        id: "add-day",
-        text: "+",
-        title: "Add a day"
-      }))
-      .append($("<span />", {
-        id: "day-tab-container"
-      }))
-      .append($("<div />", {
-        id: "remove-day",
-        text: "-",
-        title: "Remove a day"
-      }))
-      .appendTo("#fmu-main-container");
-    $("<div />", {
-      id: "day-area"
-    })
-      .append($("<div />", {
-        id: "tally-container"
-      })
-      .append($("<div />", {
-        id: "tally-wrapper"
-      })
-      .append($("<div />", {
-        id: "tally-body"
-      })))
-      .append($("<div />", {
-        id: "tally-controls"
-      })
-      .append($("<button />", {
-        class: "function-button",
-        id: "update-vote-record",
-        text: "Update"
-      }))
-      .append($("<button />", {
-        class: "function-button",
-        id: "toggle-vote-record-mode",
-        text: "Mode: Vote tally"
-      }))
-      .append($("<button />", {
-        class: "function-button",
-        id: "copy-bbcode",
-        text: "Copy BBCode tally"
-      }))
-      .append($("<button />", {
-        class: "function-button",
-        id: "copy-vote-log",
-        text: "Copy vote log"
-      }))
-      .append($("<button />", {
-        class: "function-button",
-        id: "toggle-tally-display",
-        text: "Pop out",
-        title: "Toggle floating display on/off"
-      }))))
-      .append($("<br />"))
-      .append($("<div />", {
-        id: "day-ranges"
-      })
-      .append($("<span />", {
-        text: "Start"
-      }))
-      .append($("<button />", {
-        id: "start-post",
-        class: "boundary-option input-button edit-button"
-      }))
-      .append($("<div />", {
-        class: "boundary-option",
-        id: "start-date"
-      })
-      .append($("<button />", {
-        class: "input-button edit-button",
-        id: "start-year"
-      }))
-      .append($("<button />", {
-        class: "input-button edit-button",
-        id: "start-month"
-      }))
-      .append($("<button />", {
-        class: "input-button edit-button",
-        id: "start-day"
-      }))
-      .append($("<button />", {
-        id: "start-time",
-        class: "input-button edit-button"
-      })))
-      .append($("<br />"))
-      .append($("<span />", {
-        text: "End"
-      }))
-      .append($("<button />", {
-        id: "end-post",
-        class: "boundary-option input-button edit-button"
-      }))
-      .append($("<div />", {
-        class: "boundary-option",
-        id: "end-date"
-      })
-      .append($("<button />", {
-        class: "input-button edit-button",
-        id: "end-year"
-      }))
-      .append($("<button />", {
-        class: "input-button edit-button",
-        id: "end-month"
-      }))
-      .append($("<button />", {
-        class: "input-button edit-button",
-        id: "end-day"
-      }))
-      .append($("<button />", {
-        id: "end-time",
-        class: "input-button edit-button"
-      }))))
-      .appendTo("#fmu-main-container");
-    $("<div />", {
-      id: "toggle-game-configuration-container"
-    })
-      .append($("<button />", {
-        class: "function-button",
-        id: "toggle-game-configuration",
-        text: "Show game configuration"
-      }))
-      .appendTo("#fmu-main-container");
-    $("<div />", {
-      id: "game-configuration"
-    })
-      .append($("<span />", {
-        text: "GM names"
-      }))
-      .append($("<span />", {
-        id: "gm-names"
-      }))
-      .append($("<button />", {
-        class: "function-button",
-        id: "add-gm",
-        text: "+",
-        title: "Add a new GM"
-      }))
-      .append($("<br />"))
-      .append($("<span />", {
-        text: "Night time"
-      }))
-      .append($("<button />", {
-        class: "input-button edit-button",
-        id: "nightfall-time",
-        text: padTime(gameSettings.nightfallTime)
-      }))
-      .append($("<div />", {
-        class: "vote-keywords"
-      })
-      .append($("<span />", {
-        text: "Unvote keyword"
-      }))
-      .append($("<button />", {
-        class: "input-button edit-button",
-        id: "unvote-keyword",
-        text: "unvote"
-      }))
-      .append($("<br />"))
-      .append($("<span />", {
-        text: "Vote keyword"
-      }))
-      .append($("<button />", {
-        class: "input-button edit-button",
-        id: "vote-keyword",
-        text: "vote"
-      })))
-      .append($("<br />"))
-      .append($("<span />", {
-        text: "Player names"
-      }))
-      .append($("<button />", {
-        class: "function-button",
-        id: "add-player",
-        text: "+",
-        title: "Add a new player"
-      }))
-      .append($("<button />", {
-        class: "function-button",
-        id: "import-players",
-        text: "Paste...",
-        title: "Add multiple players by pasting a list"
-      }))
-      .append($("<button />", {
-        class: "function-button",
-        id: "reset-players",
-        text: "Reset",
-        title: "Reset all players"
-      }))
-      .append($("<div />", {
-        id: "paste-wrapper"
-      })
-      .append($("<textarea />", {
-        id: "paste-area"
-      }))
-      .append($("<br />"))
-      .append($("<button />", {
-        class: "function-button",
-        id: "confirm-paste",
-        text: "Import players"
-      })))
-      .append($("<div />", {
-        id: "player-wrapper"
-      })
-      .append($("<ol />", {
-        id: "player-list"
-      })))
-      .appendTo($("#fmu-main-container"));
-    interface.pages.init();
-    interface.days.init();
-    interface.gms.init();
-    interface.players.init();
-    if (gameSettings.scriptMode == 2) {
-      $("#game-configuration").show();
-      $("#toggle-game-configuration").text("Hide game configuration");
-    }
-    $("#vote-keyword").text(gameSettings.voteKeyword);
-    $("#unvote-keyword").text(gameSettings.unvoteKeyword);
-    $("#tally-body").on("click",".unrecognised-voter", function() {
-      player.add($(this).attr("name"));
-    })
-    $("#update-vote-record").click(updateVoteRecord);
-    if (gameSettings.voteRecordMode == "votelog") {
-      $("#toggle-vote-record-mode").text("Mode: Vote log");
-    }
-    $("#toggle-vote-record-mode").click(function() {
-      toggleVoteRecordMode($(this));
-    });
-    $("#copy-bbcode").click(copyBbcodeTally);
-    $("#copy-vote-log").click(copyVoteLog);
-    $("#toggle-tally-display").click(function() {
-      toggleTallyDisplay($(this));
-    });
-    if (gameSettings.popoutTally) {
-      gameSettings.popoutTally = "";
-      toggleTallyDisplay($("#toggle-tally-display"));
-    }
-    $("#toggle-game-configuration").click(function() {
-      toggleGameConfig($(this));
-    });
-    $("#add-day").click(function() {
-      changeDayCount(1);
-    });
-    $("#remove-day").click(function() {
-      changeDayCount(-1);
-    });
-    $("#day-tab-container").on("click", ".day-tab", function() {
-      switchDay($(this).attr("name"));
-    });
-    $("#start-post").click(switchStartPost);
-    $("#start-year").click(switchStartYear);
-    $("#start-month").click(switchStartMonth);
-    $("#start-day").click(switchStartDay);
-    $("#start-time").click(switchStartTime);
-    $("#end-post").click(switchEndPost);
-    $("#end-year").click(switchEndYear);
-    $("#end-month").click(switchEndMonth);
-    $("#end-day").click(switchEndDay);
-    $("#end-time").click(switchEndTime);
-    $("#add-gm").click(promptAddGm);
-    $("#gm-names").on("click", ".gm-name", function() {
-      gmNameList.splice($.inArray($(this).text(), gmNameList), 1);
-      updateGameData("gmNameList", gmNameList);
-      $(this).remove();
-    });
-    $("#nightfall-time").click(function() {
-      changeNightfallTime($(this));
-    });
-    $("#vote-keyword").click(function() {
-      var newKeyword = prompt("Enter new vote keyword");
-      if (newKeyword) {
-        gameSettings.voteKeyword = newKeyword;
-        updateGameData("gameSettings", gameSettings);
-        $(this).text(newKeyword);
+      timeZone = getTimeZone();
+      monthNames = {
+        "jan": 0,
+        "feb": 1,
+        "mar": 2,
+        "apr": 3,
+        "may": 4,
+        "jun": 5,
+        "jul": 6,
+        "aug": 7,
+        "sep": 8,
+        "oct": 9,
+        "nov": 10,
+        "dec": 11
       }
-    });
-    $("#unvote-keyword").click(function() {
-      var newKeyword = prompt("Enter new unvote keyword");
-      if (newKeyword) {
-        gameSettings.unvoteKeyword = newKeyword;
-        updateGameData("gameSettings", gameSettings);
-        $(this).text(newKeyword);
-      }
-    });
-    $("#add-player").click(function() {
-      var newPlayer = prompt("Enter the name of the player you want to add");
-      if (newPlayer) {
-        player.add(newPlayer);
-      }
-    });
-    $("#import-players").click(function() {
-      $("#paste-wrapper").slideToggle();
-      $("#paste-area").focus();
-    })
-    $("#confirm-paste").click(confirmPaste);
-    $("#reset-players").click(player.deleteAll);
-    $("#player-list").on("click", ".player-name", function() {
-      handleEditPlayer($(this))
-    });
-    $("#player-list").on("click", ".player-state", function() {
-      togglePlayerState($(this));
-    });
-    $("#player-list").on("click", ".death-phase", function() {
-      toggleDeathPhase($(this));
-    });
-    $("#player-list").on("click", ".death-time", function() {
-      changeDeathTime($(this));
-    });
-    $("#player-list").on("click", ".add-sub", function() {
-      var playerName = $(this).parents(".player-block").children(".player-name").text();
-      var newSub = prompt("Enter alternative name for player - e.g. subs or nicknames");
-      if (newSub) {
-        addSub(playerName, newSub);
-      }
-    });
-    $("#player-list").on("click", ".sub-name", function() {
-      var playerName = $(this).parents(".player-block").attr("name");
-      var sub = $(this).text();
-      removeSub(playerName, sub);
-    });
-    $("#player-list").on("click", ".remove-player", function() {
-      var playerName = $(this).parents(".player-block").attr("name");
-      player.delete(playerName);
-    });
-    if (gmNameList.length > 0) {
-      generateData();
-    }
-  },
-  days: {
-    init: function() {
-      for (var day = 1; day < dayDataList.length; day++) {
-        interface.days.draw(day);
-      }
-      switchDay(currentDay);
+      ignoredPlayerList = ["TallyBot"]; //Usernames to ignore when retrieving data
+      nightKeywords = ["lynch", "kill", "day", "night", "someone", "die"]; //List of words associated with night posts (unimplemented)
+      currentPage = 0;
+      pageTotal = 0;
+      numberPostsOnPage = 0;
+      getCurrentPageNumbers();
+      utilities.data.reset();
+      utilities.data.players.init();
     },
-    draw: function(day) {
-      drawDayTab(day);
-      colourDayTab(day);
-    }
-  },
-  gms: {
-    init: function() {
-      if (gmNameList.length > 0) {
-        for (var i = 0; i < gmNameList.length; i++) {
-          drawGm(gmNameList[i]);
-        }
+    reset: function() {
+      if (localStorage.getItem("gameSettings" + threadId)) {
+        gameSettings = JSON.parse(localStorage.getItem("gameSettings" + threadId));
+      } else {
+        gameSettings = {
+          "scriptMode": 0, //0 = Off, 1 = On, game config is hidden, 2 = On, game config is shown
+          "currentDay": 1, //The day that is currently selected by the user
+          "nightfallTime": 2000, //Default time for nightfall
+          "popoutTally": "", //Tally display mode
+          "voteRecordMode": "tally", //Whether tally or vote log is displayed
+          "voteKeyword": "vote", //String used to signify vote
+          "unvoteKeyword": "unvote" //String used to signify unvote
+        };
       }
-    }
-  },
-  pages: {
-    init: function() {
-      for (var page = 1; page <= pageTotal; page++) {
-        var pageStatus = getPageStatus(threadId, page);
-        var newBlock = $("<a />", {
-          class: "page-link",
-          href: getPageLink(threadId, page),
-          page: page,
-          text: page
-        }).appendTo($("#page-controls"));
-        if (page == currentPage) {
-          newBlock.addClass("page-selected");
+      currentDay = gameSettings.currentDay;
+      gmNameList = [];
+      savedTallyList = [];
+      savedVoteLogList = [];
+      recognisedVoteList = {};
+      unrecognisedVoterList = [];
+      dayDataList = [];
+      initialiseDayData(1);
+      if (localStorage.getItem("gmNameList" + threadId)) {
+        gmNameList = JSON.parse(localStorage.getItem("gmNameList" + threadId));
+      }
+      if (currentPage == 1 && gmNameList.length == 0) {
+        //Page 1, so the first poster should be a GM
+        gmNameList.push($(".bigusername").first().text());
+        updateGameData("gmNameList", gmNameList);
+      }
+      initialiseDayData(1);
+      if (localStorage.getItem("dayDataList" + threadId)) {
+        dayDataList = JSON.parse(localStorage.getItem("dayDataList" + threadId));
+      }
+      if (localStorage.getItem("savedTallyList" + threadId)) {
+        savedTallyList = JSON.parse(localStorage.getItem("savedTallyList" + threadId));
+      }
+      if (localStorage.getItem("savedVoteLogList" + threadId)) {
+        savedVoteLogList = JSON.parse(localStorage.getItem("savedVoteLogList" + threadId));
+      }
+      if (localStorage.getItem("unrecognisedVoterList" + threadId)) {
+        unrecognisedVoterList = JSON.parse(localStorage.getItem("unrecognisedVoterList" + threadId));
+      }
+    },
+    resetLocal: function() {
+      localStorage.removeItem("gmNameList" + threadId);
+      localStorage.removeItem("players" + threadId);
+      localStorage.removeItem("dayDataList" + threadId);
+      localStorage.removeItem("savedTallyList" + threadId);
+      localStorage.removeItem("savedVoteLogList" + threadId);
+      localStorage.removeItem("dayDataList" + threadId);
+      localStorage.removeItem("gameSettings" + threadId);
+      localStorage.removeItem("unrecognisedVoterList" + threadId);
+      $(".full-save, .partial-save").each(function() {
+        pg = $(this).text();
+        localStorage.removeItem("pageData" + threadId + "-" + pg);
+        localStorage.removeItem("pageStatus" + threadId + "-" + pg);
+      });
+    },
+    //TODO: data.players
+    players: {
+      init: function() {
+        if (localStorage.getItem("players" + threadId)) {
+          this.list = JSON.parse(localStorage.getItem("players" + threadId));
         }
-        if (pageStatus == scriptSettings.numberPostsPerPage || (currentPage == pageTotal && pageStatus == numberPostsOnPage)) {
-          newBlock.addClass("full-save");
-        } else if (pageStatus > 0) {
-          newBlock.addClass("partial-save");
+      },
+      add: function(playerName) {
+        if (!this.list.hasOwnProperty[playerName]) {
+          this.list[playerName] = {
+            "status": 0,
+            "subs": [],
+            "nicknames": []
+          };
+          this.generateNicknames(playerName);
+          this.save();
+        }
+      },
+      list: {},
+      isAlive: function(playerName, day) {
+        if (this.list.hasOwnProperty(playerName) && this.list[playerName].status != 0 && this.list[playerName].status < day * 2) {
+          return false;
         } else {
-          newBlock.addClass("empty-save");
+          return true;
         }
-      }
-    }
-  },
-  players: {
-    init: function() {
-      if (playerNameList.length > 0) {
-        for (var i = 0; i < playerNameList.length; i++) {
-          var playerBlock = player.draw(playerNameList[i]);
-          updatePlayerState(playerBlock, playerNameList[i]);
-          if (subNameList[playerNameList[i]]) {
-            for (var j = 0; j < subNameList[playerNameList[i]].length; j++) {
-              drawSub(playerNameList[i], subNameList[playerNameList[i]][j]);
-            }
+      },
+      generateNicknames: function(playerName) {
+        if (playerName.indexOf(" ") >= 0) {
+          var newNick = "";
+          var splitName = playerName.split(" ");
+          for (var c in splitName) {
+            newNick += splitName[c].charAt(0);
+          }
+          this.list[playerName].nicknames.push(newNick);
+        }
+        if (playerName.indexOf("_") >= 0) {
+          var newNick = "";
+          var splitName = playerName.split("_");
+          for (var c in splitName) {
+            newNick += splitName[c].charAt(0);
+          }
+          if ($.inArray(newNick, this.list[playerName].nicknames) == -1) {
+            this.list[playerName].nicknames.push(newNick);
           }
         }
+        var uppercaseName = getUpperCase(playerName);
+        var nonLowercaseName = getNonLowerCase(playerName);
+        var lowercaseName = getLowerCase(playerName);
+        if (uppercaseName.length > 1 && lowercaseName.length > 2) {
+          if ($.inArray(nonLowercaseName, this.list[playerName].nicknames) == -1) {
+            this.list[playerName].nicknames.push(nonLowercaseName);
+          }
+        } else if(nonLowercaseName.length > 5 && lowercaseName.length > 1) {
+          if ($.inArray(lowercaseName, this.list[playerName].nicknames) == -1) {
+            this.list[playerName].nicknames.push(lowercaseName);
+          }
+        }
+      },
+      rename: function(oldName, newName) {
+        if (!this.list.hasOwnProperty(newName)) {
+          this.list[newName] = this.list[oldName];
+          delete this.list[oldName];
+          this.save();
+          return true;
+        } else {
+          return false;
+        }
+      },
+      updateState: function(playerName, newState) {
+        this.list[playerName].status = newState;
+        this.save();
+      },
+      addSub: function(playerName, subName) {
+        if ($.inArray(subName, this.list[playerName].subs) == -1) {
+          this.list[playerName].subs.push(subName);
+          this.save();
+        }
+      },
+      removeSub: function(playerName, subName) {
+        var i = $.inArray(subName, this.list[playerName].subs);
+        if (i >= 0) {
+          this.list[playerName].subs.splice(i, 1);
+          this.save();
+        }
+      },
+      addNickname: function(nickname) {
+        if (!this.list[playerName].nicknames) {
+          this.list[playerName].nicknames = [];
+        }
+        this.list[playerName].nicknames.push(nickname);
+        this.save();
+      },
+      removeNickname: function(nickname) {
+        var i = $.inArray(nickname, this.list[playerName].nicknames);
+        if (i >= 0) {
+          this.list[playerName].nicknames.splice(i, 1);
+          this.save();
+        }
+      },
+      registerUnrecognisedVoter: function(userName) {
+        if ($.inArray(userName, unrecognisedVoterList) == -1) {
+          var recognisedVoter = false;
+          Object.keys(this.list).forEach(function(playerName) {
+            if (!recognisedVoter) {
+              if (diceCoefficient(playerName, userName) > 0.9) {
+                utilities.control.players.rename(playerName, userName);
+                recognisedVoter = true;
+              }
+            }
+          });
+          if (!recognisedVoter) {
+            unrecognisedVoterList.push(userName);
+            updateGameData("unrecognisedVoterList", unrecognisedVoterList);
+          }
+        }
+      },
+      save: function() {
+        localStorage.setItem("players" + threadId, JSON.stringify(this.list));
+      },
+      remove: function(playerName) {
+        delete utilities.data.players.list[playerName];
+        this.save();
+      },
+      reset: function() {
+        this.list = {};
+        this.save();
       }
     }
-  },
-  reset: function() {
-    $("#fmu-main-container").remove();
-    $("#toggle-script").text("Start game");
-  }
-}
-
-var gameData = {
-  init: function() {
-    threadId = getThreadId();
-    scriptSettings = {
-      "bbcodePostNumbers": 0, //BBCode post numbers
-      "nightBufferTime": 10, //How long a night lasts - used for automatically filling in start times
-      "numberPostsPerPage": 60 //Maximum number of posts per page - Forum default is 60
-    }
-    if (localStorage.getItem("fmuSettings")) {
-      scriptSettings = JSON.parse(localStorage.getItem("fmuSettings"));
-    }
-    timeZone = getTimeZone();
-    monthNames = {
-      "jan": 0,
-      "feb": 1,
-      "mar": 2,
-      "apr": 3,
-      "may": 4,
-      "jun": 5,
-      "jul": 6,
-      "aug": 7,
-      "sep": 8,
-      "oct": 9,
-      "nov": 10,
-      "dec": 11
-    }
-    ignoredPlayerList = ["TallyBot"]; //Usernames to ignore when retrieving data
-    nightKeywords = ["lynch", "kill", "day", "night", "someone", "die"]; //List of words associated with night posts (unimplemented)
-    currentPage = 0;
-    pageTotal = 0;
-    numberPostsOnPage = 0;
-    getCurrentPageNumbers();
-    gameData.reset();
-  },
-  reset: function() {
-    if (localStorage.getItem("gameSettings" + threadId)) {
-      gameSettings = JSON.parse(localStorage.getItem("gameSettings" + threadId));
-      currentDay = gameSettings.currentDay;
-    } else {
-      gameSettings = {
-        "scriptMode": 0, //0 = Off, 1 = On, game config is hidden, 2 = On, game config is shown
-        "currentDay": 1, //The day that is currently selected by the user
-        "nightfallTime": 2000, //Default time for nightfall
-        "popoutTally": "", //Tally display mode
-        "voteRecordMode": "tally", //Whether tally or vote log is displayed
-        "voteKeyword": "vote", //String used to signify vote
-        "unvoteKeyword": "unvote" //String used to signify unvote
-      };
-    }
-    gmNameList = [];
-    playerNameList = [];
-    playerStatusList = {};
-    subNameList = {};
-    playerNicknameList = {};
-    savedTallyList = [];
-    savedVoteLogList = [];
-    recognisedVoteList = {};
-    unrecognisedVoterList = [];
-    dayDataList = [];
-    initialiseDayData(1);
-    if (localStorage.getItem("gmNameList" + threadId)) {
-      gmNameList = JSON.parse(localStorage.getItem("gmNameList" + threadId));
-    }
-    if (currentPage == 1 && gmNameList.length == 0) {
-      //Page 1, so the first poster should be a GM
-      gmNameList.push($(".bigusername").first().text());
-      updateGameData("gmNameList", gmNameList);
-    }
-    if (localStorage.getItem("playerNameList" + threadId)) {
-      playerNameList = JSON.parse(localStorage.getItem("playerNameList" + threadId));
-      playerStatusList = JSON.parse(localStorage.getItem("playerStatusList" + threadId));
-    }
-    if (localStorage.getItem("subNameList" + threadId)) {
-      subNameList = JSON.parse(localStorage.getItem("subNameList" + threadId));
-    }
-    initialiseDayData(1);
-    if (localStorage.getItem("dayDataList" + threadId)) {
-      dayDataList = JSON.parse(localStorage.getItem("dayDataList" + threadId));
-    }
-    if (localStorage.getItem("savedTallyList" + threadId)) {
-      savedTallyList = JSON.parse(localStorage.getItem("savedTallyList" + threadId));
-    }
-    if (localStorage.getItem("savedVoteLogList" + threadId)) {
-      savedVoteLogList = JSON.parse(localStorage.getItem("savedVoteLogList" + threadId));
-    }
-    if (localStorage.getItem("unrecognisedVoterList" + threadId)) {
-      unrecognisedVoterList = JSON.parse(localStorage.getItem("unrecognisedVoterList" + threadId));
-    }
-  },
-  resetLocal: function() {
-    localStorage.removeItem("gmNameList" + threadId);
-    localStorage.removeItem("playerNameList" + threadId);
-    localStorage.removeItem("subNameList" + threadId);
-    localStorage.removeItem("dayDataList" + threadId);
-    localStorage.removeItem("savedTallyList" + threadId);
-    localStorage.removeItem("savedVoteLogList" + threadId);
-    localStorage.removeItem("dayDataList" + threadId);
-    localStorage.removeItem("playerStatusList" + threadId);
-    localStorage.removeItem("gameSettings" + threadId);
-    localStorage.removeItem("unrecognisedVoterList" + threadId);
-    $(".full-save, .partial-save").each(function() {
-      pg = $(this).text();
-      localStorage.removeItem("pageData" + threadId + "-" + pg);
-      localStorage.removeItem("pageStatus" + threadId + "-" + pg);
-    });
   }
 }
 
@@ -954,13 +1247,13 @@ function toggleScriptMode(toggleButton) {
   if (gameSettings.scriptMode == 0) {
     gameSettings.scriptMode = 1;
     updateGameData("gameSettings", gameSettings);
-    gameData.reset();
-    interface.draw();
+    utilities.data.reset();
+    utilities.ui.draw();
     toggleButton.text("Delete game");
   } else {
-    gameData.resetLocal();
-    gameData.reset();
-    interface.reset();
+    utilities.data.resetLocal();
+    utilities.data.reset();
+    utilities.ui.reset();
   }
 }
 
@@ -1094,22 +1387,10 @@ function initialiseDayData(day) {
   dayDataList[day] = {
     "startDate": startDate,
     "startPost": startPost,
-    "startSelected": "start-post",
+    "startSelected": "start-date",
     "endDate": endDate,
     "endSelected": "end-date"
   };
-}
-
-function updatePlayerState(playerBlock, playerName) {
-  var playerStatus = playerStatusList[playerName];
-  $(".player-block[name='" + playerName + "'] .player-state").text(getLifeStatus(playerStatus));
-  $(".player-block[name='" + playerName + "'] .death-phase").text(getPhaseName(playerStatus));
-  $(".player-block[name='" + playerName + "'] .death-time").text(getDeathTime(playerStatus));
-  if (playerStatus == 0) {
-    playerBlock.addClass("alive-player");
-  } else {
-    playerBlock.addClass("dead-player");
-  }
 }
 
 function changeNightfallTime(nightfallTimeButton) {
@@ -1141,7 +1422,7 @@ function switchStartPost() {
   dayDataList[currentDay]["startSelected"] = "start-post";
   updateGameData("dayDataList", dayDataList);
   switchDay(currentDay);
-  colourDayTab(currentDay);  
+  colourDayTab(currentDay);
 }
 
 function switchStartDate() {
@@ -1241,7 +1522,7 @@ function switchEndPost() {
   dayDataList[currentDay]["endSelected"] = "end-post";
   updateGameData("dayDataList", dayDataList);
   switchDay(currentDay);
-  colourDayTab(currentDay);  
+  colourDayTab(currentDay);
 }
 
 function switchEndDate() {
@@ -1344,19 +1625,7 @@ function confirmPaste() {
   }
   importedPlayers = importedPlayers.filter(Boolean);
   for (var i = 0; i < importedPlayers.length; i++) {
-    player.add(importedPlayers[i]);
-  }
-}
-
-function handleEditPlayer(editPlayerButton) {
-  var oldName = editPlayerButton.text();
-  var newName = prompt("Enter new player name.", oldName);
-  if (newName) {
-    player.update(oldName, newName);
-    editPlayerButton.text(newName);
-    editPlayerButton.parents(".player-block").attr("name", newName);
-  } else if (newName == "") {
-    player.delete(oldName);
+    utilities.control.players.add(importedPlayers[i]);
   }
 }
 
@@ -1472,9 +1741,6 @@ function deleteDayData(day) {
 }
 
 function updateVoteRecord() {
-  if (playerNameList.length > 0) {
-    generateNicknames(playerNameList);
-  }
   var start = 1;
   var end = 200000;
   if (dayDataList[currentDay]["startSelected"] == "start-post") {
@@ -1567,59 +1833,6 @@ function toggleGameConfig(toggleButton) {
     updateGameData("gameSettings", gameSettings);
     $("#game-configuration").slideDown();
     toggleButton.text("Hide game configuration");
-  }
-}
-
-function togglePlayerState(toggleButton) {
-  var playerName = toggleButton.parent().attr("name");
-  if (toggleButton.text() == "alive") {
-    if (toggleButton.closest(".player-block").find(".death-phase").text() == "night") {
-      playerStatusList[playerName] = currentDay * 2;
-    } else {
-      playerStatusList[playerName] = currentDay * 2 - 1;
-    }
-    updateGameData("playerStatusList", playerStatusList);
-    toggleButton.closest(".player-block").removeClass("alive-player").addClass("dead-player");
-    toggleButton.text(getLifeStatus(currentDay));
-    toggleButton.closest(".player-block").find(".death-time").text(currentDay);
-    
-  } else {
-    playerStatusList[playerName] = 0;
-    updateGameData("playerStatusList", playerStatusList);
-    toggleButton.closest(".player-block").removeClass("dead-player").addClass("alive-player");
-    toggleButton.text(getLifeStatus(0));
-  }
-  updatePlayerState(toggleButton.parent(), playerName);
-}
-
-function toggleDeathPhase(toggleButton) {
-  var playerName = toggleButton.closest(".player-block").attr("name");
-  if (playerStatusList[playerName] % 2 == 0) {
-    //Currently night
-    playerStatusList[playerName] -= 1;
-    updateGameData("playerStatusList", playerStatusList);
-    toggleButton.text("day");
-  } else {
-    //Currently day
-    playerStatusList[playerName] += 1;
-    updateGameData("playerStatusList", playerStatusList);
-    toggleButton.text("night");
-  }
-}
-
-function changeDeathTime(toggleButton) {
-  var newState = prompt("Enter the day/night of death");
-  if (newState) {
-    newState = parseInt(newState);
-    if (newState > 0) {
-      if (toggleButton.closest(".death-info").find(".death-phase").text() == "night") {
-        playerStatusList[toggleButton.closest(".player-block").attr("name")] = newState * 2;
-      } else {
-        playerStatusList[toggleButton.closest(".player-block").attr("name")] = newState * 2 - 1;
-      }
-      updateGameData("playerStatusList", playerStatusList);
-      toggleButton.text(newState);
-    }
   }
 }
 
@@ -1721,7 +1934,7 @@ function getVoteTarget(vote) {
   voteTarget = voteTarget.split("(")[0].split("[")[0].trim();
   if (voteTarget == "") {
     return null;
-  } else if (playerNameList.length > 0) {
+  } else if (!jQuery.isEmptyObject(utilities.data.players.list)) {
     return matchPlayer(voteTarget);
   } else {
     return voteTarget;
@@ -1753,27 +1966,28 @@ function getTallyForRange(start, end, day) {
     }
     var vote = recognisedVoteList[post];
     var user = vote["user"];
-    if (!player.isAlive(vote["user"], day)) {
+    if (!utilities.data.players.isAlive(vote["user"], day)) {
       //Throwing out votes from dead players
       return;
     }
-    if (!playerVotes[vote["user"]]) {
-      if (playerNameList.length > 0 && $.inArray(vote["user"], playerNameList) == -1) {
-        for (var s in subNameList) {
-          subNameList[s];
-          if ($.inArray(user, subNameList[s]) >= 0) {
-            user = s;
-            break;
+    if (!playerVotes.hasOwnProperty(vote["user"])) {
+      if (!utilities.data.players.list.hasOwnProperty(vote["user"])) {
+        Object.keys(utilities.data.players.list).forEach(function(playerName) {
+          for (var sub in utilities.data.players.list[playerName].subs) {
+            if (utilities.data.players.list[playerName].subs[sub] == user) {
+              user = playerName;
+              break;
+            }
           }
-        }
+        });
         if (vote["user"] == user) {
           //Did not match to sub
-          registerUnrecognisedVoter(vote["user"]);
+          utilities.data.players.registerUnrecognisedVoter(vote["user"]);
         }
       }
       playerVotes[user] = {};
     }
-    if (!playerVotes[user]["post"] || post > playerVotes[user]["post"]) {
+    if (!playerVotes[user].hasOwnProperty("post") || post > playerVotes[user]["post"]) {
       playerVotes[user]["post"] = post;
       playerVotes[user]["link"] = vote["link"];
       if (vote["type"] == 2 || vote["type"] == 1) {
@@ -1783,18 +1997,18 @@ function getTallyForRange(start, end, day) {
       }
     }
   });
-  for (var i in playerNameList) {
-    if (!player.isAlive(playerNameList[i], day)) {
-      continue;
+  Object.keys(utilities.data.players.list).forEach(function(playerName) {
+    if (!utilities.data.players.isAlive(playerName, day)) {
+      return;
     }
-    if (!playerVotes.hasOwnProperty(playerNameList[i])) {
-      playerVotes[playerNameList[i]] = {
+    if (!playerVotes.hasOwnProperty(playerName)) {
+      playerVotes[playerName] = {
         "target": "",
         "post": 0,
         "link": ""
       };
     }
-  }
+  });
   Object.keys(playerVotes).sort(function(a, b) {
     return playerVotes[a]["post"] - playerVotes[b]["post"];
   }).forEach(function(user) {
@@ -1974,37 +2188,27 @@ function matchPlayer(string) {
   if (highestScore == 1) {
     return closestMatch;
   }
-  for (var i in playerNameList) {
-    var score = diceCoefficient(string, playerNameList[i]);
-    if (score == 1) {
-      return playerNameList[i];
-    }
-    if (score > highestScore) {
-      closestMatch = playerNameList[i];
-      highestScore = score;
-    }
-    if (playerNicknameList.hasOwnProperty(playerNameList[i])) {
-      for (var j in playerNicknameList[playerNameList[i]]) {
-        var score = diceCoefficient(string, playerNicknameList[playerNameList[i]][j]);
-        if (score > highestScore) {
-          closestMatch = playerNameList[i];
-          highestScore = score;
-        }
-      }
-    }
-  }
-  for (var i in subNameList) {
-    for (var j in subNameList[i]) {
-      var score = diceCoefficient(string, subNameList[i][j]);
-      if (score == 1) {
-        return i;
-      }
+  Object.keys(utilities.data.players.list).forEach(function(playerName) {
+    for (var nick in utilities.data.players.list[playerName].nicknames) {
+      var score = diceCoefficient(string, utilities.data.players.list[playerName].nicknames[nick]);
       if (score >= highestScore) {
-        closestMatch = i;
+        closestMatch = playerName;
         highestScore = score;
       }
     }
-  }
+    for (var sub in utilities.data.players.list[playerName].subs) {
+      var score = diceCoefficient(string, utilities.data.players.list[playerName].subs[sub]);
+      if (score >= highestScore) {
+        closestMatch = playerName;
+        highestScore = score;
+      }
+    }
+    var score = diceCoefficient(string, playerName);
+    if (score >= highestScore) {
+      closestMatch = playerName;
+      highestScore = score;
+    }
+  });
   if (highestScore > 0) {
     return closestMatch;
   } else {
@@ -2018,104 +2222,6 @@ function matchPlayerByDay(string, day) {
 }
 
 var player = {
-  add: function(playerName) {
-    if ($.inArray(playerName, playerNameList) == -1) {
-    //If and only if player is not already in player list, add player
-    playerNameList.push(playerName);
-    playerStatusList[playerName] = 0;
-    updateGameData("playerNameList", playerNameList);
-    updateGameData("playerStatusList", playerStatusList);
-    player.recognise(playerName);
-    player.draw(playerName);
-    }
-  },
-  draw: function(playerName) {
-    return $("<li />", {
-      class: "player-block alive-player",
-      name: playerName
-    })
-      .append($("<button />", {
-        class: "player-name input-button edit-button",
-        text: playerName,
-        title: "Edit player name"
-      }))
-      .append($("<button />", {
-        class: "player-state input-button",
-        text: "alive",
-        title: "Toggle whether player is alive or dead"
-      }))
-      .append($("<div />", {
-        class: "death-info"
-      })
-      .append($("<button />", {
-        class: "death-phase input-button",
-        text: "night",
-        title: "Toggle between day and night"
-      }))
-      .append($("<button />", {
-        class: "death-time input-button edit-button",
-        text: "1",
-        title: "Day/night of death"
-      })))
-      .append($("<span />", {
-        class: "sub-list"
-      }))
-      .append($("<span />", {
-        class: "player-controls"
-      })
-      .append($("<button />", {
-        class: "add-sub function-button",
-        text: "+Alias",
-        title: "Add a new alias for this player"
-      }))
-      .append($("<button />", {
-        class: "remove-player function-button",
-        text: "-",
-        title: "Remove this player"
-      })))
-      .appendTo("#player-list");
-  },
-  update: function(oldName, newName) {
-    var i = $.inArray(oldName, playerNameList);
-    playerNameList[i] = newName;
-    updateGameData("playerNameList", playerNameList);
-    if (subNameList.hasOwnProperty(oldName)) {
-      subNameList[newName] = subNameList[oldName];
-      delete subNameList[oldName];
-      updateGameData("subNameList", subNameList);
-    }
-    playerStatusList[newName] = playerStatusList[oldName];
-    delete playerStatusList[oldName];
-    updateGameData("playerStatusList", playerStatusList);
-    for (var i in unrecognisedVoterList) {
-      $(".unrecognised-voter[name='" + oldName + "']").attr("name", newName);
-    }
-    player.recognise(newName);
-  },
-  delete: function(playerName) {
-    var index = $.inArray(playerName, playerNameList);
-    if (index >= 0) {
-      playerNameList.splice(index, 1);
-      updateGameData("playerNameList", playerNameList);
-      if (subNameList.hasOwnProperty(playerName)) {
-        delete subNameList[playerName];
-        updateGameData("subNameList", subNameList);
-      }
-      delete playerStatusList[playerName];
-      updateGameData("playerStatusList", playerStatusList);
-      $(".player-block[name='" + playerName + "']").remove();
-    }
-  },
-  deleteAll: function() {
-    playerNameList = [];
-    subNameList = {};
-    playerNicknameList = {};
-    playerStatusList = {};
-    updateGameData("playerNameList", playerNameList);
-    updateGameData("subNameList", subNameList);
-    updateGameData("playerStatusList", playerStatusList);
-    $("#player-list").text("");
-  },
   recognise: function(playerName) {
     //Checks the unrecognised voter list to see if it can match some new name and remove them from the unrecognised list
     for (var i in unrecognisedVoterList) {
@@ -2125,13 +2231,6 @@ var player = {
         $(".unrecognised-voter[name='" + playerName + "']").removeClass("unrecognised-voter");
         break;
       }
-    }
-  },
-  isAlive: function(playerName, day) {
-    if (playerStatusList[playerName] != 0 && playerStatusList[playerName] < day * 2) {
-      return false;
-    } else {
-      return true;
     }
   }
 }
@@ -2148,109 +2247,11 @@ function addGm(gmName) {
   }
 }
 
-function addSub(playerName, subName) {
-  if (!subNameList[playerName]) {
-    subNameList[playerName] = [];
-  }
-  if ($.inArray(subName, subNameList[playerName]) >= 0) {
-    return;
-  }
-  subNameList[playerName].push(subName);
-  updateGameData("subNameList", subNameList);
-  drawSub(playerName, subName);
-}
-
-function removeSub(playerName, subName) {
-  index = $.inArray(subName, subNameList[playerName]);
-  if (index >= 0) {
-    subNameList[playerName].splice(index, 1);
-    if (subNameList[playerName].length == 0) {
-      subNameList[playerName] = "";
-      $(".player-block[name='" + playerName + "']").children(".sub-list").text("");
-    }
-    updateGameData("subNameList", subNameList);
-    $(".player-block[name='" + playerName + "']").find(".sub-name").filter(function() {
-      return $(this).text() == subName;
-    }).remove();
-  }
-}
-
-function registerUnrecognisedVoter(user) {
-  if ($.inArray(user, unrecognisedVoterList) == -1) {
-    var recognisedVoter = false;
-    for (var i in playerNameList) {
-      if (diceCoefficient(playerNameList[i], user) > 0.9) {
-        $(".player-block[name='" + playerNameList[i] + "'] .player-name").text(user);
-        $(".player-block[name='" + playerNameList[i] + "']").attr("name", user);
-        player.update(playerNameList[i], user);
-        recognisedVoter = true;
-        return;
-      }
-    }
-    if (!recognisedVoter) {
-      unrecognisedVoterList.push(user);
-      updateGameData("unrecognisedVoterList", unrecognisedVoterList);
-    }
-  }
-}
-
 function drawGm(gmName) {
   $("<button />", {
     class: "gm-name input-button",
     text: gmName
   }).appendTo($("#gm-names"));
-}
-
-function drawSub(playerName, subName) {
-  if ($(".player-block[name='" + playerName + "'] .sub-list").text().length == 0) {
-    $("<span />", {
-      text: "subbing for"
-    }).appendTo($(".player-block[name='" + playerName + "'] .sub-list"));
-  }
-  $("button />", {
-    class: "sub-name input-button",
-    text: subName
-  })
-  .appendTo($(".player-block[name='" + playerName + "'] .sub-list"));
-}
-
-function generateNicknames(nameList) {
-  for (var i in nameList) {
-    var playerName = nameList[i];
-    if (!playerNicknameList.hasOwnProperty(playerName)) {
-      playerNicknameList[playerName] = [];
-    }
-    if (playerName.indexOf(" ") >= 0) {
-      var newNick = "";
-      var splitName = playerName.split(" ");
-      for (var c in splitName) {
-        newNick += splitName[c].charAt(0);
-      }
-      playerNicknameList[playerName].push(newNick);
-    }
-    if (playerName.indexOf("_") >= 0) {
-      var newNick = "";
-      var splitName = playerName.split("_");
-      for (var c in splitName) {
-        newNick += splitName[c].charAt(0);
-      }
-      if ($.inArray(newNick, playerNicknameList[playerName]) == -1) {
-        playerNicknameList[playerName].push(newNick);
-      }
-    }
-    var uppercaseName = getUpperCase(playerName);
-    var nonLowercaseName = getNonLowerCase(playerName);
-    var lowercaseName = getLowerCase(playerName);
-    if (uppercaseName.length > 1 && lowercaseName.length > 2) {
-      if ($.inArray(nonLowercaseName, playerNicknameList[playerName]) == -1) {
-        playerNicknameList[playerName].push(nonLowercaseName);
-      }
-    } else if(nonLowercaseName.length > 5 && lowercaseName.length > 1) {
-      if ($.inArray(lowercaseName, playerNicknameList[playerName]) == -1) {
-        playerNicknameList[playerName].push(lowercaseName);
-      }
-    }
-  }
 }
 
 //Returns uppercase characters of a string
