@@ -886,7 +886,7 @@ var fmu = {
         var playerBlock = fmu.ui.players.list[newName];
         playerBlock.find(".player-name").text(newName);
         playerBlock.attr("name", newName);
-        for (var i in unrecognisedVoterList) {
+        for (var i in fmu.data.players.unrecognised.list) {
           $(".unrecognised-voter[name='" + oldName + "']").attr("name", newName);
         }
       },
@@ -1162,7 +1162,7 @@ var fmu = {
         if (!fmu.data.players.list.hasOwnProperty(playerName)) {
           //If player is not already in player list, add player
           fmu.data.players.add(playerName);
-          fmu.data.players.recognise(playerName);
+          fmu.data.players.unrecognised.update(playerName);
           fmu.ui.players.add(playerName);
         }
       },
@@ -1435,7 +1435,7 @@ var fmu = {
           fmu.control.update();
           toggleButton.text("Delete game");
         } else {
-          fmu.data.resetLocal();
+          fmu.data.clear();
           fmu.data.reset();
           fmu.ui.reset();
           $("#toggle-script").text("Start game");
@@ -1481,12 +1481,12 @@ var fmu = {
         fmu.control.votes.update();
       },
 
-      changeNightfallTime: function(nightfallTimeButton) {
+      changeNightfallTime: function(button) {
         var nightfallTime = fmu.data.date.parser.stringToTime(prompt("Enter new time for night"));
         if (nightfallTime >= 0) {
           fmu.data.options.game.nightfallTime = nightfallTime;
           fmu.data.options.save();
-          nightfallTimeButton.text(fmu.data.date.parser.timeToString(fmu.data.options.game.nightfallTime));
+          button.text(fmu.data.date.parser.timeToString(fmu.data.options.game.nightfallTime));
         }
       }
     }
@@ -1519,41 +1519,35 @@ var fmu = {
       pageTotal = parseInt(pageArray[3]);
       numberPostsOnPage = 1 + parseInt($(".thead > [id^=postcount]").last().attr("name")) - parseInt($(".thead > [id^=postcount]").first().attr("name"));
       currentDay = fmu.data.options.game.day;
-      fmu.data.players.init();
       fmu.data.mods.init();
+      fmu.data.players.init();
+      fmu.data.players.unrecognised.init();
       fmu.data.days.init();
       recognisedVoteList = {};
-      unrecognisedVoterList = [];
       if (currentPage === 1 && fmu.data.mods.list.length == 0) {
         //Page 1, so the first poster should be a GM
         fmu.control.mods.add($(".bigusername").first().text());
-      }
-      if (localStorage.getItem("unrecognisedVoterList" + threadId)) {
-        unrecognisedVoterList = JSON.parse(localStorage.getItem("unrecognisedVoterList" + threadId));
       }
     },
 
     reset: function() {
       fmu.data.options.reset();
-      currentDay = fmu.data.options.game.day;
       fmu.data.players.reset();
+      fmu.data.players.unrecognised.reset();
+      currentDay = fmu.data.options.game.day;
       recognisedVoteList = {};
-      unrecognisedVoterList = [];
       if (currentPage === 1 && fmu.data.mods.list.length == 0) {
         //Page 1, so the first poster should be a GM
         fmu.control.mods.add($(".bigusername").first().text());
       }
-      if (localStorage.getItem("unrecognisedVoterList" + threadId)) {
-        unrecognisedVoterList = JSON.parse(localStorage.getItem("unrecognisedVoterList" + threadId));
-      }
     },
 
-    resetLocal: function() {
+    clear: function() {
       localStorage.removeItem("mods" + threadId);
       localStorage.removeItem("players" + threadId);
       localStorage.removeItem("days" + threadId);
       localStorage.removeItem("gameOptions" + threadId);
-      localStorage.removeItem("unrecognisedVoterList" + threadId);
+      localStorage.removeItem("unrecognisedUsers" + threadId);
       $(".full-save, .partial-save").each(function() {
         var page = $(this).text();
         localStorage.removeItem("pageData" + threadId + "-" + page);
@@ -1731,54 +1725,6 @@ var fmu = {
 
       list: {},
 
-      isAlive: function(playerName, day) {
-        if (this.list.hasOwnProperty(playerName) && this.list[playerName].status != 0 && this.list[playerName].status < day * 2) {
-          return false;
-        } else {
-          return true;
-        }
-      },
-
-      state: {
-        name: function(state) {
-          if (state === 0) {
-            return "alive";
-          } else if (state > 0) {
-            return "dead";
-          } else {
-            return "resurrected";
-          }
-        },
-
-        phase: function(state) {
-          if (state % 2 == 1) {
-            return "day";
-          } else {
-            return "night";
-          }
-        },
-
-        time: function(state) {
-          return Math.ceil(state / 2);
-        }
-      },
-
-      rename: function(oldName, newName) {
-        if (!this.list.hasOwnProperty(newName)) {
-          this.list[newName] = this.list[oldName];
-          delete this.list[oldName];
-          this.save();
-          return true;
-        } else {
-          return false;
-        }
-      },
-
-      updateState: function(playerName, newState) {
-        this.list[playerName].status = newState;
-        this.save();
-      },
-
       subs: {
         add: function(playerName, subName) {
           if ($.inArray(subName, fmu.data.players.list[playerName].subs) === -1) {
@@ -1843,6 +1789,54 @@ var fmu = {
         }
       },
 
+      isAlive: function(playerName, day) {
+        if (this.list.hasOwnProperty(playerName) && this.list[playerName].status != 0 && this.list[playerName].status < day * 2) {
+          return false;
+        } else {
+          return true;
+        }
+      },
+
+      state: {
+        name: function(state) {
+          if (state === 0) {
+            return "alive";
+          } else if (state > 0) {
+            return "dead";
+          } else {
+            return "resurrected";
+          }
+        },
+
+        phase: function(state) {
+          if (state % 2 == 1) {
+            return "day";
+          } else {
+            return "night";
+          }
+        },
+
+        time: function(state) {
+          return Math.ceil(state / 2);
+        }
+      },
+
+      rename: function(oldName, newName) {
+        if (!this.list.hasOwnProperty(newName)) {
+          this.list[newName] = this.list[oldName];
+          delete this.list[oldName];
+          this.save();
+          return true;
+        } else {
+          return false;
+        }
+      },
+
+      updateState: function(playerName, newState) {
+        this.list[playerName].status = newState;
+        this.save();
+      },
+
       match: function(name) {
         var closestMatch = "No lynch";
         var highestScore = diceCoefficient(name, "No lynch");
@@ -1878,33 +1872,60 @@ var fmu = {
         }
       },
 
-      registerUnrecognisedVoter: function(userName) {
-        if ($.inArray(userName, unrecognisedVoterList) === -1) {
-          var recognisedVoter = false;
-          Object.keys(this.list).forEach(function(playerName) {
-            if (!recognisedVoter) {
+      unrecognised: {
+        init: function() {
+          if (localStorage.getItem("unrecognisedUsers" + threadId)) {
+            this.list = JSON.parse(localStorage.getItem("unrecognisedUsers" + threadId));
+          }
+        },
+
+        add: function(userName) {
+          this.list.push(userName);
+          this.save();
+        },
+
+        register: function(userName) {
+          if (!jQuery.isEmptyObject(fmu.data.players.list) && $.inArray(userName, this.list) == -1) {
+            if (Object.keys(fmu.data.players.list).every(function(playerName) {
               if (diceCoefficient(playerName, userName) > 0.9) {
                 fmu.control.players.rename(playerName, userName);
-                recognisedVoter = true;
+                return false;
               }
+              return true;
+            }) == true) {
+              this.add(userName);
             }
-          });
-          if (!recognisedVoter) {
-            unrecognisedVoterList.push(userName);
-            localStorage.setItem("unrecognisedVoterList" + threadId, JSON.stringify(unrecognisedVoterList));
           }
-        }
-      },
+        },
 
-      recognise: function(playerName) {
-        //Checks the unrecognised voter list to see if it can match some new name and remove them from the unrecognised list
-        for (var i in unrecognisedVoterList) {
-          if (diceCoefficient(unrecognisedVoterList[i], playerName) > 0.9) {
-            unrecognisedVoterList.splice(i, 1);
-            localStorage.setItem("unrecognisedVoterList" + threadId, JSON.stringify(unrecognisedVoterList));
-            $(".unrecognised-voter[name='" + playerName + "']").removeClass("unrecognised-voter");
-            break;
+        update: function(playerName) {
+          //Checks the unrecognised voter list to see if it can match some new name and remove them from the unrecognised list
+          for (var i in this.list) {
+            if (diceCoefficient(this.list[i], playerName) > 0.9) {
+              this.remove(this.list[i]);
+              $(".unrecognised-voter[name='" + playerName + "']").removeClass("unrecognised-voter");
+              break;
+            }
           }
+        },
+
+        list: [],
+
+        remove: function(userName) {
+          var i = $.inArray(userName, this.list);
+          if (i >= 0) {
+            this.list.splice(i, 1);
+            this.save();
+          }
+        },
+
+        save: function() {
+          localStorage.setItem("unrecognisedUsers" + threadId, JSON.stringify(this.list));
+        },
+
+        reset: function() {
+          this.list = [];
+          this.save();
         }
       },
 
@@ -2042,7 +2063,7 @@ var fmu = {
               });
               if (vote["user"] === user) {
                 //Did not match to sub
-                fmu.data.players.registerUnrecognisedVoter(vote["user"]);
+                fmu.data.players.unrecognised.register(vote["user"]);
               }
             }
             playerVotes[user] = {};
@@ -2233,7 +2254,7 @@ var fmu = {
         }).forEach(function(target) {
           var voterList = "";
           for (var voter in voteRecord[target]) {
-            if ($.inArray(voteRecord[target][voter][0], unrecognisedVoterList) >= 0) {
+            if ($.inArray(voteRecord[target][voter][0], fmu.data.players.unrecognised.list) >= 0) {
               voterList += "<span class='voter-wrap'><a class='vote-link' href='" + fmu.data.thread.postLink(voteRecord[target][voter][2]) + "'>" + voteRecord[target][voter][1] + "</a><span class='voter-name unrecognised-voter' name='" + voteRecord[target][voter][0] + "'>" + voteRecord[target][voter][0] + "</span></span>";
             } else {
               voterList += "<span class='voter-wrap'><a class='vote-link' href='" + fmu.data.thread.postLink(voteRecord[target][voter][2]) + "'>" + voteRecord[target][voter][1] + "</a><span class='voter-name'>" + voteRecord[target][voter][0] + "</span></span>";
@@ -2403,9 +2424,9 @@ var fmu = {
         }
       },
 
-      game: { },
+      game: {},
 
-      script: { },
+      script: {},
 
       save: function() {
         localStorage.setItem("fmuOptions", JSON.stringify(this.script));
