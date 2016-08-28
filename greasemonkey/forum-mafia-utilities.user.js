@@ -390,7 +390,7 @@ $(document).ready(function () {
   fmu.data.init();
   fmu.ui.init();
   fmu.control.init();
-  if (gameSettings.scriptMode) {
+  if (fmu.data.options.game.mode) {
     fmu.ui.draw();
     fmu.control.update();
   } else {
@@ -448,7 +448,7 @@ var fmu = {
           .append($("<button />", {
             class: "input-button edit-button",
             id: "night-buffer-time",
-            text: scriptSettings.nightBufferTime,
+            text: fmu.data.options.script.nightBufferTime,
             title: "The amount of time between the end of one day and the start of the next"
           }))
           .append($("<div />", {
@@ -462,7 +462,7 @@ var fmu = {
             title: "Reset all data permanently"
           })))
       .insertAfter("#qrform");
-      if (scriptSettings.bbcodePostNumbers) {
+      if (fmu.data.options.script.bbcodePostNumbers) {
         $("#toggle-bbcode-post-numbers").text("On");
       }
     },
@@ -628,7 +628,7 @@ var fmu = {
         .append($("<button />", {
           class: "input-button edit-button",
           id: "nightfall-time",
-          text: padTime(gameSettings.nightfallTime)
+          text: fmu.data.date.parser.timeToString(fmu.data.options.game.nightfallTime)
         }))
         .append($("<div />", {
           class: "vote-keywords"
@@ -695,56 +695,19 @@ var fmu = {
       fmu.ui.days.init();
       fmu.ui.mods.init();
       fmu.ui.players.init();
-      if (gameSettings.scriptMode == 2) {
+      if (fmu.data.options.game.mode == 2) {
         $("#game-configuration").show();
         $("#toggle-game-configuration").text("Hide game configuration");
       }
-      $("#vote-keyword").text(gameSettings.voteKeyword);
-      $("#unvote-keyword").text(gameSettings.unvoteKeyword);
-      //TODO: Move all of these click handlers to fmu.control
-      if (gameSettings.voteRecordMode == "votelog") {
+      $("#vote-keyword").text(fmu.data.options.game.voteKeyword);
+      $("#unvote-keyword").text(fmu.data.options.game.unvoteKeyword);
+      if (fmu.data.options.game.voteRecordMode == "votelog") {
         $("#toggle-vote-record-mode").text("Mode: Vote log");
       }
-      $("#toggle-vote-record-mode").on("click", function() {
-        toggleVoteRecordMode($(this));
-      });
-      $("#copy-bbcode").on("click", function() {
-        fmu.control.votes.copy("bbcode");
-      });
-      $("#copy-vote-log").on("click", function() {
-        fmu.control.votes.copy("voteLog");
-      });
-      $("#toggle-tally-display").on("click", function() {
-        toggleTallyDisplay($(this));
-      });
-      if (gameSettings.popoutTally) {
-        gameSettings.popoutTally = "";
-        toggleTallyDisplay($("#toggle-tally-display"));
+      if (fmu.data.options.game.popoutTally) {
+        $("#tally-container").addClass("floating");
+        $("#toggle-tally-display").text("Close");
       }
-      $("#nightfall-time").on("click", function() {
-        changeNightfallTime($(this));
-      });
-      $("#vote-keyword").on("click", function() {
-        var newKeyword = prompt("Enter new vote keyword");
-        if (newKeyword) {
-          gameSettings.voteKeyword = newKeyword;
-          updateGameData("gameSettings", gameSettings);
-          $(this).text(newKeyword);
-        }
-      });
-      $("#unvote-keyword").on("click", function() {
-        var newKeyword = prompt("Enter new unvote keyword");
-        if (newKeyword) {
-          gameSettings.unvoteKeyword = newKeyword;
-          updateGameData("gameSettings", gameSettings);
-          $(this).text(newKeyword);
-        }
-      });
-      $("#import-players").on("click", function() {
-        $("#paste-wrapper").slideToggle();
-        $("#paste-area").focus();
-      })
-      $("#confirm-paste").on("click", confirmPaste);
       if (fmu.data.mods.list.length > 0) {
         fmu.data.thread.parse();
       }
@@ -772,8 +735,8 @@ var fmu = {
       },
       switch: function(day) {
         currentDay = day;
-        gameSettings.currentDay = day;
-        updateGameData("gameSettings", gameSettings);
+        fmu.data.options.game.day = day;
+        fmu.data.options.save();
         $(".day-tab").removeClass("day-selected");
         $(".day-tab").eq(day - 1).addClass("day-selected");
         $(".boundary-option").removeClass("boundary-option-selected");
@@ -782,11 +745,11 @@ var fmu = {
         } else {
           $("#start-post").text("Post #?");
         }
-        var startTime = getOffsetDate(new Date(fmu.data.days.list[day]["startDate"]), 0, timeZone);
+        var startTime = fmu.data.date.offset(new Date(fmu.data.days.list[day]["startDate"]), 0, timeZone);
         $("#start-year").text(startTime.getUTCFullYear());
-        $("#start-month").text(padTo2Digits(startTime.getUTCMonth() + 1));
-        $("#start-day").text(padTo2Digits(startTime.getUTCDate()));
-        $("#start-time").text(formatTimeString(startTime));
+        $("#start-month").text(fmu.data.date.parser.to2Digits(startTime.getUTCMonth() + 1));
+        $("#start-day").text(fmu.data.date.parser.to2Digits(startTime.getUTCDate()));
+        $("#start-time").text(fmu.data.date.parser.dateToTimeString(startTime));
         $("#" + fmu.data.days.list[day]["start"]).addClass("boundary-option-selected");
         $("#" + fmu.data.days.list[day]["end"]).addClass("boundary-option-selected");
         if (fmu.data.days.list[day]["endPost"]) {
@@ -794,14 +757,14 @@ var fmu = {
         } else {
           $("#end-post").text("Post #?");
         }
-        var endTime = getOffsetDate(new Date(fmu.data.days.list[day]["endDate"]), 0, timeZone);
+        var endTime = fmu.data.date.offset(new Date(fmu.data.days.list[day]["endDate"]), 0, timeZone);
         $("#end-year").text(endTime.getUTCFullYear());
-        $("#end-month").text(padTo2Digits(endTime.getUTCMonth() + 1));
-        $("#end-day").text(padTo2Digits(endTime.getUTCDate()));
-        $("#end-time").text(formatTimeString(endTime));
-        if (gameSettings.voteRecordMode == "tally" && !jQuery.isEmptyObject(fmu.data.days.list[day].tally)) {
+        $("#end-month").text(fmu.data.date.parser.to2Digits(endTime.getUTCMonth() + 1));
+        $("#end-day").text(fmu.data.date.parser.to2Digits(endTime.getUTCDate()));
+        $("#end-time").text(fmu.data.date.parser.dateToTimeString(endTime));
+        if (fmu.data.options.game.voteRecordMode == "tally" && !jQuery.isEmptyObject(fmu.data.days.list[day].tally)) {
           $("#tally-body").html(fmu.data.votes.html(fmu.data.days.list[day].tally));
-        } else if (gameSettings.voteRecordMode == "votelog" && fmu.data.days.list[day].voteLog.length > 0) {
+        } else if (fmu.data.options.game.voteRecordMode == "votelog" && fmu.data.days.list[day].voteLog.length > 0) {
           $("#tally-body").html(fmu.data.days.list[day].voteLog);
         } else {
           $("#tally-body").html("");
@@ -835,17 +798,17 @@ var fmu = {
     pages: {
       init: function() {
         for (var page = 1; page <= pageTotal; page++) {
-          var pageStatus = getPageStatus(threadId, page);
+          var pageStatus = fmu.data.thread.pageStatus(page);
           var newBlock = $("<a />", {
             class: "page-link",
-            href: fmu.data.thread.pageLink(threadId, page),
+            href: fmu.data.thread.pageLink(page),
             page: page,
             text: page
           }).appendTo($("#page-controls"));
           if (page == currentPage) {
             newBlock.addClass("page-selected");
           }
-          if (pageStatus == scriptSettings.numberPostsPerPage || (currentPage == pageTotal && pageStatus == numberPostsOnPage)) {
+          if (pageStatus == fmu.data.options.script.numberPostsPerPage || (currentPage == pageTotal && pageStatus == numberPostsOnPage)) {
             newBlock.addClass("full-save");
           } else if (pageStatus > 0) {
             newBlock.addClass("partial-save");
@@ -866,7 +829,9 @@ var fmu = {
           }
         });
       },
+
       list: {},
+
       add: function(playerName) {
         var playerBlock = $("<li />", {
           class: "player-block alive-player",
@@ -914,6 +879,7 @@ var fmu = {
         .appendTo("#player-list");
         fmu.ui.players.list[playerName] = playerBlock;
       },
+
       rename: function(oldName, newName) {
         fmu.ui.players.list[newName] = fmu.ui.players.list[oldName];
         delete fmu.ui.players.list[oldName];
@@ -924,18 +890,20 @@ var fmu = {
           $(".unrecognised-voter[name='" + oldName + "']").attr("name", newName);
         }
       },
+
       updateState: function(playerName) {
         var playerStatus = fmu.data.players.list[playerName].status;
         var playerBlock = this.list[playerName];
-        playerBlock.find(".player-state").text(getLifeStatus(playerStatus));
-        playerBlock.find(".death-phase").text(getPhaseName(playerStatus));
-        playerBlock.find(".death-time").text(getDeathTime(playerStatus));
+        playerBlock.find(".player-state").text(fmu.data.players.state.name(playerStatus));
+        playerBlock.find(".death-phase").text(fmu.data.players.state.phase(playerStatus));
+        playerBlock.find(".death-time").text(fmu.data.players.state.time(playerStatus));
         if (playerStatus == 0) {
           playerBlock.addClass("alive-player").removeClass("dead-player");
         } else {
           playerBlock.addClass("dead-player").removeClass("alive-player");
         }
       },
+
       subs: {
         add: function(playerName, subName) {
           var playerBlock = fmu.ui.players.list[playerName];
@@ -961,9 +929,11 @@ var fmu = {
           }
         }
       },
+
       remove: function(playerName) {
         this.list[playerName].remove();
       },
+
       reset: function() {
         $("#player-list").text("");
       }
@@ -981,23 +951,23 @@ var fmu = {
         $("#settings-display").slideToggle();
       });
       $("#toggle-script").on("click", function() {
-        toggleScriptMode($(this));
+        fmu.control.options.toggleMode($(this));
       });
       $("#toggle-bbcode-post-numbers").on("click", function() {
-        toggleBbcodePostNumbers($(this));
+        fmu.control.options.toggleBbcodePostNumbers($(this));
       });
       $("#night-buffer-time").on("click", function() {
         var newBuffer = parseInt(prompt("Enter night buffer time in minutes"));
         if (newBuffer > 0) {
-          scriptSettings.nightBufferTime = newBuffer;
-          localStorage.setItem("fmuSettings", JSON.stringify(scriptSettings));
+          fmu.data.options.script.nightBufferTime = newBuffer;
+          fmu.data.options.save();
           $(this).text(newBuffer);
         }
       });
       $("#clear-data").on("click", function() {
         if (confirm("Are you sure you want to reset all data?")) {
           localStorage.clear();
-          scriptSettings = {
+          fmu.data.options.script = {
             "bbcodePostNumbers": 0, //BBCode post numbers
             "nightBufferTime": 10, //How long a night lasts - used for automatically filling in start times
             "numberPostsPerPage": 60 //Maximum number of posts per page - Forum default is 60
@@ -1044,25 +1014,40 @@ var fmu = {
       $("#end-time").on("click", function() {
         fmu.control.days.end.switch("time");
       });
+
       $("#tally-body").on("click",".unrecognised-voter", function() {
         var playerName = $(this).attr("name");
         fmu.control.players.add(playerName);
       })
-      $("#update-vote-record").on("click", updateVoteRecord);
+      $("#update-vote-record").on("click", fmu.control.votes.update);
+      $("#toggle-vote-record-mode").on("click", function() {
+        fmu.control.options.toggleVoteRecordMode($(this));
+      });
+      $("#copy-bbcode").on("click", function() {
+        fmu.control.votes.copy("bbcode");
+      });
+      $("#copy-vote-log").on("click", function() {
+        fmu.control.votes.copy("voteLog");
+      });
+      $("#toggle-tally-display").on("click", function() {
+        fmu.control.options.toggleTallyDisplay($(this));
+      });
+
       $("#toggle-game-configuration").on("click", function() {
         if ($("#game-configuration").is(":visible")) {
-          gameSettings.scriptMode = 1;
-          updateGameData("gameSettings", gameSettings);
+          fmu.data.options.game.mode = 1;
+          fmu.data.options.save();
           $("#game-configuration").slideUp(function() {
             $("#toggle-game-configuration").text("Show game configuration");
           });
         } else {
-          gameSettings.scriptMode = 2;
-          updateGameData("gameSettings", gameSettings);
+          fmu.data.options.game.mode = 2;
+          fmu.data.options.save();
           $("#game-configuration").slideDown();
           $(this).text("Hide game configuration");
         }
       });
+
       $("#add-gm").on("click", function() {
         var modName = prompt("Enter the name of the new GM");
         if (modName) {
@@ -1072,13 +1057,40 @@ var fmu = {
       $("#gm-names").on("click", ".gm-name", function() {
         fmu.control.mods.remove($(this).text());
       });
-      $("#reset-players").on("click", fmu.control.players.reset);
+
+      $("#nightfall-time").on("click", function() {
+        fmu.control.options.changeNightfallTime($(this));
+      });
+      $("#vote-keyword").on("click", function() {
+        var newKeyword = prompt("Enter new vote keyword");
+        if (newKeyword) {
+          fmu.data.options.game.voteKeyword = newKeyword;
+          fmu.data.options.save();
+          $(this).text(newKeyword);
+        }
+      });
+      $("#unvote-keyword").on("click", function() {
+        var newKeyword = prompt("Enter new unvote keyword");
+        if (newKeyword) {
+          fmu.data.options.game.unvoteKeyword = newKeyword;
+          fmu.data.options.save();
+          $(this).text(newKeyword);
+        }
+      });
+
       $("#add-player").on("click", function() {
         var playerName = prompt("Enter the name of the player you want to add");
         if (playerName) {
           fmu.control.players.add(playerName);
         }
       });
+      $("#import-players").on("click", function() {
+        $("#paste-wrapper").slideToggle();
+        $("#paste-area").focus();
+      })
+      $("#confirm-paste").on("click", fmu.control.players.import);
+      $("#reset-players").on("click", fmu.control.players.reset);
+
       $("#player-list").on("click", ".player-name", function() {
         var oldName = $(this).text();
         var newName = prompt("Enter new player name.", oldName);
@@ -1154,10 +1166,30 @@ var fmu = {
           fmu.ui.players.add(playerName);
         }
       },
+
+      import: function() {
+        $("#paste-wrapper").slideUp();
+        var importedPlayers = $("#paste-area").val().split("\n");
+        for (var i = 0; i < importedPlayers.length; i++) {
+          if (importedPlayers[i].indexOf(".") >= 0) {
+            importedPlayers[i] = importedPlayers[i].split(".")[1];
+          }
+          if (importedPlayers[i].indexOf(")") >= 0) {
+            importedPlayers[i] = importedPlayers[i].split(")")[1];
+          }
+          importedPlayers[i] = importedPlayers[i].trim();
+        }
+        importedPlayers = importedPlayers.filter(Boolean);
+        for (var i = 0; i < importedPlayers.length; i++) {
+          fmu.control.players.add(importedPlayers[i]);
+        }
+      },
+
       updateState: function(playerName, newState) {
         fmu.data.players.updateState(playerName, newState);
         fmu.ui.players.updateState(playerName);
       },
+
       subs: {
         add: function(playerName, subName) {
           fmu.data.players.subs.add(playerName, subName);
@@ -1168,17 +1200,20 @@ var fmu = {
           fmu.ui.players.subs.remove(playerName, subName);
         }
       },
+
       rename: function(oldName, newName) {
         if (fmu.data.players.rename(oldName, newName)) {
           fmu.ui.players.rename(oldName, newName);
         }
       },
+
       remove: function(playerName) {
         if (fmu.data.players.list.hasOwnProperty(playerName)) {
           fmu.data.players.remove(playerName);
           fmu.ui.players.remove(playerName);
         }
       },
+
       reset: function() {
         fmu.data.players.reset();
         fmu.ui.players.reset();
@@ -1228,7 +1263,7 @@ var fmu = {
               fmu.ui.days.switch(currentDay);
             } else {
               var newDate = new Date(fmu.data.days.list[currentDay]["startDate"]);
-              newDate = getOffsetDate(newDate, 0, timeZone);
+              newDate = fmu.data.date.offset(newDate, 0, timeZone);
               if (type === "year") {
                 var year = parseInt(prompt("Enter new start year"));
                 if (year > 0) {
@@ -1246,7 +1281,7 @@ var fmu = {
                 }
               } else if (type === "time") {
                 var time = prompt("Enter new start time");
-                var actualTime = validateTime(time);
+                var actualTime = fmu.data.date.parser.stringToTime(time);
                 if (actualTime >= 0) {
                   var hours = Math.floor(actualTime / 100);
                   var minutes = actualTime % 100;
@@ -1254,7 +1289,7 @@ var fmu = {
                   newDate.setUTCMinutes(minutes);
                 }
               }
-              fmu.data.days.list[currentDay]["startDate"] = getOffsetDate(newDate, 0, -timeZone);
+              fmu.data.days.list[currentDay]["startDate"] = fmu.data.date.offset(newDate, 0, -timeZone);
               fmu.data.days.save();
               fmu.ui.days.switch(currentDay);
             }
@@ -1290,7 +1325,7 @@ var fmu = {
               fmu.ui.days.switch(currentDay);
             } else {
               var newDate = new Date(fmu.data.days.list[currentDay]["endDate"]);
-              newDate = getOffsetDate(newDate, 0, timeZone);
+              newDate = fmu.data.date.offset(newDate, 0, timeZone);
               if (type === "year") {
                 var year = parseInt(prompt("Enter new end year"));
                 if (year > 0) {
@@ -1308,7 +1343,7 @@ var fmu = {
                 }
               } else if (type === "time") {
                 var time = prompt("Enter new end time");
-                var actualTime = validateTime(time);
+                var actualTime = fmu.data.date.parser.stringToTime(time);
                 if (actualTime >= 0) {
                   var hours = Math.floor(actualTime / 100);
                   var minutes = actualTime % 100;
@@ -1316,7 +1351,7 @@ var fmu = {
                   newDate.setUTCMinutes(minutes);
                 }
               }
-              fmu.data.days.list[currentDay]["endDate"] = getOffsetDate(newDate, 0, -timeZone);
+              fmu.data.days.list[currentDay]["endDate"] = fmu.data.date.offset(newDate, 0, -timeZone);
               fmu.data.days.save();
               fmu.ui.days.switch(currentDay);
             }
@@ -1327,8 +1362,35 @@ var fmu = {
 
     votes: {
       update: function() {
-        //Update vote tracker
+        var start = 1;
+        var end = 200000;
+        if (fmu.data.days.list[currentDay]["start"] === "start-post") {
+          start = parseInt(fmu.data.days.list[currentDay]["startPost"]);
+        } else if (fmu.data.days.list[currentDay]["start"] === "start-date") {
+          start = new Date(fmu.data.days.list[currentDay]["startDate"]);
+          start.setUTCSeconds(0, 0);
+        }
+        if (fmu.data.days.list[currentDay]["end"] === "end-post") {
+          end = parseInt(fmu.data.days.list[currentDay]["endPost"]);
+        } else if (fmu.data.days.list[currentDay]["end"] === "end-date") {
+          end = new Date(fmu.data.days.list[currentDay]["endDate"]);
+          end.setUTCSeconds(59, 999);
+        }
+        fmu.data.votes.update();
+        var voteRecord = "";
+        if (fmu.data.options.game.voteRecordMode === "tally") {
+          var tally = fmu.data.votes.inRange(start, end, currentDay);
+          fmu.data.days.list[currentDay].tally = tally;
+          fmu.data.days.save();
+          voteRecord = fmu.data.votes.html(tally);
+        } else {
+          voteRecord = fmu.data.votes.voteLogInRange(start, end);
+          fmu.data.days.list[currentDay].voteLog = voteRecord;
+          fmu.data.days.save();
+        }
+        $("#tally-body").html(voteRecord);
       },
+
       copy: function(type) {
         if (type === "bbcode") {
           if (!jQuery.isEmptyObject(fmu.data.days.list[currentDay].tally)) {
@@ -1352,14 +1414,79 @@ var fmu = {
             end = parseInt(fmu.data.days.list[currentDay]["endPost"]);
           } else if (fmu.data.days.list[currentDay]["end"] === "end-date") {
             end = new Date(fmu.data.days.list[currentDay]["endDate"]);
-            end.setUTCSeconds(59, 1000);
+            end.setUTCSeconds(59, 999);
           }
-          parseAllVotes();
-          var voteLog = getVoteLogForRange(start, end);
+          fmu.data.votes.update();
+          var voteLog = fmu.data.votes.voteLogInRange(start, end);
           $("#data-container").val(voteLog);
           $("#data-container").select();
           document.execCommand("copy");
           $("#data-container").remove();
+        }
+      }
+    },
+
+    options: {
+      toggleMode: function(toggleButton) {
+        if (fmu.data.options.game.mode === 0) {
+          fmu.data.options.game.mode = 1;
+          fmu.data.options.save();
+          fmu.ui.draw();
+          fmu.control.update();
+          toggleButton.text("Delete game");
+        } else {
+          fmu.data.resetLocal();
+          fmu.data.reset();
+          fmu.ui.reset();
+          $("#toggle-script").text("Start game");
+        }
+      },
+
+      toggleBbcodePostNumbers: function(toggleButton) {
+        if (fmu.data.options.script.bbcodePostNumbers === 0) {
+          fmu.data.options.script.bbcodePostNumbers = 1;
+          fmu.data.options.save();
+          toggleButton.text("On");
+        } else {
+          fmu.data.options.script.bbcodePostNumbers = 0;
+          fmu.data.options.save();
+          toggleButton.text("Off");
+        }
+      },
+
+      toggleTallyDisplay: function(toggleButton) {
+        if (fmu.data.options.game.popoutTally) {
+          fmu.data.options.game.popoutTally = 0;
+          fmu.data.options.save();
+          $("#tally-container").removeClass("floating");
+          toggleButton.text("Pop out");
+        } else {
+          fmu.data.options.game.popoutTally = 1;
+          fmu.data.options.save();
+          $("#tally-container").addClass("floating");
+          toggleButton.text("Close");
+        }
+      },
+
+      toggleVoteRecordMode: function(toggleButton) {
+        if (fmu.data.options.game.voteRecordMode === "tally") {
+          fmu.data.options.game.voteRecordMode = "votelog";
+          fmu.data.options.save();
+          toggleButton.text("Mode: Vote log");
+        } else {
+          fmu.data.options.game.voteRecordMode = "tally";
+          fmu.data.options.save();
+          toggleButton.text("Mode: Vote tally");
+        }
+        fmu.control.votes.update();
+      },
+
+      changeNightfallTime: function(nightfallTimeButton) {
+        var nightfallTime = fmu.data.date.parser.stringToTime(prompt("Enter new time for night"));
+        if (nightfallTime >= 0) {
+          fmu.data.options.game.nightfallTime = nightfallTime;
+          fmu.data.options.save();
+          nightfallTimeButton.text(fmu.data.date.parser.timeToString(fmu.data.options.game.nightfallTime));
         }
       }
     }
@@ -1368,16 +1495,8 @@ var fmu = {
   data: {
     init: function() {
       threadId = fmu.data.thread.id();
-      if (localStorage.getItem("fmuSettings")) {
-        scriptSettings = JSON.parse(localStorage.getItem("fmuSettings"));
-      } else {
-        scriptSettings = {
-          "bbcodePostNumbers": 0, //BBCode post numbers
-          "nightBufferTime": 10, //How long a night lasts - used for automatically filling in start times
-          "numberPostsPerPage": 60 //Maximum number of posts per page - Forum default is 60
-        }
-      }
-      timeZone = getTimeZone();
+      fmu.data.options.init();
+      timeZone = fmu.data.thread.timezone();
       monthNames = {
         "jan": 0,
         "feb": 1,
@@ -1399,20 +1518,7 @@ var fmu = {
       currentPage = parseInt(pageArray[1]);
       pageTotal = parseInt(pageArray[3]);
       numberPostsOnPage = 1 + parseInt($(".thead > [id^=postcount]").last().attr("name")) - parseInt($(".thead > [id^=postcount]").first().attr("name"));
-      if (localStorage.getItem("gameSettings" + threadId)) {
-        gameSettings = JSON.parse(localStorage.getItem("gameSettings" + threadId));
-      } else {
-        gameSettings = {
-          "scriptMode": 0, //0 = Off, 1 = On, game config is hidden, 2 = On, game config is shown
-          "currentDay": 1, //The day that is currently selected by the user
-          "nightfallTime": 2000, //Default time for nightfall
-          "popoutTally": "", //Tally display mode
-          "voteRecordMode": "tally", //Whether tally or vote log is displayed
-          "voteKeyword": "vote", //String used to signify vote
-          "unvoteKeyword": "unvote" //String used to signify unvote
-        };
-      }
-      currentDay = gameSettings.currentDay;
+      currentDay = fmu.data.options.game.day;
       fmu.data.players.init();
       fmu.data.mods.init();
       fmu.data.days.init();
@@ -1428,16 +1534,8 @@ var fmu = {
     },
 
     reset: function() {
-      gameSettings = {
-        "scriptMode": 0, //0 = Off, 1 = On, game config is hidden, 2 = On, game config is shown
-        "currentDay": 1, //The day that is currently selected by the user
-        "nightfallTime": 2000, //Default time for nightfall
-        "popoutTally": "", //Tally display mode
-        "voteRecordMode": "tally", //Whether tally or vote log is displayed
-        "voteKeyword": "vote", //String used to signify vote
-        "unvoteKeyword": "unvote" //String used to signify unvote
-      };
-      currentDay = gameSettings.currentDay;
+      fmu.data.options.reset();
+      currentDay = fmu.data.options.game.day;
       fmu.data.players.reset();
       recognisedVoteList = {};
       unrecognisedVoterList = [];
@@ -1454,7 +1552,7 @@ var fmu = {
       localStorage.removeItem("mods" + threadId);
       localStorage.removeItem("players" + threadId);
       localStorage.removeItem("days" + threadId);
-      localStorage.removeItem("gameSettings" + threadId);
+      localStorage.removeItem("gameOptions" + threadId);
       localStorage.removeItem("unrecognisedVoterList" + threadId);
       $(".full-save, .partial-save").each(function() {
         var page = $(this).text();
@@ -1492,12 +1590,53 @@ var fmu = {
         return "http://forums.kingdomofloathing.com/vb/showthread.php?p=" + post;
       },
 
+      pageStatus: function(page) {
+        var numSaved = localStorage.getItem("pageStatus" + threadId + "-" + page)
+        if (!numSaved) {
+          return 0;
+        } else {
+          return parseInt(numSaved);
+        }
+      },
+
+      timezone: function() {
+        var timeString = $("div.page div.smallfont").last().text(); //Gets string at bottom which tells time zone
+        timeString = timeString.split("GMT")[1].split(". ")[0]; //Get between "GMT " and ". "
+        return parseFloat(timeString.replace("+","").trim());
+      },
+
+      posts: {
+        username: function(post) {
+          return post.find(".bigusername").text();
+        },
+
+        time: function(post) {
+          return post.find(".thead").first().text().trim();
+        },
+
+        body: function(post) {
+          return post.find(".alt1").children("div");
+        },
+
+        boldText: function(post) {
+          return post.find(".alt1").children("div").children("b");
+        },
+
+        id: function(post) {
+          return post.find(".thead").children("[id^=postcount]").attr("id").replace("postcount","");
+        },
+
+        number: function(post) {
+          return post.find(".thead").children("[id^=postcount]").attr("name");
+        }
+      },
+
       parse: function() {
         var data = {};
         var gmData = {};
         $("#posts").find(".page").each(function () {
-          var username = getPostUsername($(this));
-          var boldPost = getPostBoldText($(this));
+          var username = fmu.data.thread.posts.username($(this));
+          var boldPost = fmu.data.thread.posts.boldText($(this));
           if (boldPost.length > 0 && $.inArray(username, fmu.data.mods.list) == -1 && $.inArray(username, ignoredPlayerList) == -1) {
             var boldedContent = "";
             boldPost.each(function () {
@@ -1512,7 +1651,7 @@ var fmu = {
                 htmlContent = htmlContent.html();
               }
               var content = htmlContent.replace(/(['"])/g, '\\$1').replace(/\n/g, " ").toLowerCase();
-              if (content.indexOf(gameSettings.voteKeyword) >= 0 || content.indexOf(gameSettings.unvoteKeyword) >= 0) {
+              if (content.indexOf(fmu.data.options.game.voteKeyword) >= 0 || content.indexOf(fmu.data.options.game.unvoteKeyword) >= 0) {
                 boldedContent += content.trim();
               }
             });
@@ -1521,15 +1660,15 @@ var fmu = {
             }
             var postData = {
               "u": username, //User
-              "t": parseDateFromString(getPostTime($(this))), //Time of post
+              "t": fmu.data.date.parser.stringToDate(fmu.data.thread.posts.time($(this))), //Time of post
               "r": boldedContent, //Raw vote: Parts of post that involve voting
-              "l": getPostId($(this)) //Used to link to post
+              "l": fmu.data.thread.posts.id($(this)) //Used to link to post
             };
-            data[getPostNumber($(this))] = postData;
+            data[fmu.data.thread.posts.number($(this))] = postData;
           } else if ($.inArray(username, fmu.data.mods.list)) {
             //Post content
-            gmData[getPostNumber($(this))] = {
-              "p": getPostBody($(this)).html().replace(/(['"])/g, '\\$1').replace(/\n/g, " ").trim()
+            gmData[fmu.data.thread.posts.number($(this))] = {
+              "p": fmu.data.thread.posts.body($(this)).html().replace(/(['"])/g, '\\$1').replace(/\n/g, " ").trim()
             };
           }
         });
@@ -1577,6 +1716,7 @@ var fmu = {
           this.list = JSON.parse(localStorage.getItem("players" + threadId));
         }
       },
+
       add: function(playerName) {
         if (!this.list.hasOwnProperty[playerName]) {
           this.list[playerName] = {
@@ -1588,7 +1728,9 @@ var fmu = {
           this.save();
         }
       },
+
       list: {},
+
       isAlive: function(playerName, day) {
         if (this.list.hasOwnProperty(playerName) && this.list[playerName].status != 0 && this.list[playerName].status < day * 2) {
           return false;
@@ -1596,6 +1738,31 @@ var fmu = {
           return true;
         }
       },
+
+      state: {
+        name: function(state) {
+          if (state === 0) {
+            return "alive";
+          } else if (state > 0) {
+            return "dead";
+          } else {
+            return "resurrected";
+          }
+        },
+
+        phase: function(state) {
+          if (state % 2 == 1) {
+            return "day";
+          } else {
+            return "night";
+          }
+        },
+
+        time: function(state) {
+          return Math.ceil(state / 2);
+        }
+      },
+
       rename: function(oldName, newName) {
         if (!this.list.hasOwnProperty(newName)) {
           this.list[newName] = this.list[oldName];
@@ -1606,10 +1773,12 @@ var fmu = {
           return false;
         }
       },
+
       updateState: function(playerName, newState) {
         this.list[playerName].status = newState;
         this.save();
       },
+
       subs: {
         add: function(playerName, subName) {
           if ($.inArray(subName, fmu.data.players.list[playerName].subs) === -1) {
@@ -1625,6 +1794,7 @@ var fmu = {
           }
         }
       },
+
       nicknames: {
         init: function(playerName) {
           if (playerName.indexOf(" ") >= 0) {
@@ -1672,6 +1842,42 @@ var fmu = {
           }
         }
       },
+
+      match: function(name) {
+        var closestMatch = "No lynch";
+        var highestScore = diceCoefficient(name, "No lynch");
+        if (highestScore == 1) {
+          return closestMatch;
+        }
+        Object.keys(fmu.data.players.list).forEach(function(playerName) {
+          for (var nick in fmu.data.players.list[playerName].nicknames) {
+            var score = diceCoefficient(name, fmu.data.players.list[playerName].nicknames[nick]);
+            if (score >= highestScore) {
+              closestMatch = playerName;
+              highestScore = score;
+            }
+          }
+          for (var sub in fmu.data.players.list[playerName].subs) {
+            var score = diceCoefficient(name, fmu.data.players.list[playerName].subs[sub]);
+            if (score >= highestScore) {
+              closestMatch = playerName;
+              highestScore = score;
+            }
+          }
+          var score = diceCoefficient(name, playerName);
+          if (score >= highestScore) {
+            closestMatch = playerName;
+            highestScore = score;
+          }
+        });
+        if (highestScore > 0) {
+          return closestMatch;
+        } else {
+          //If the highest score is 0 (no similarity), declines to return a player name
+          return name;
+        }
+      },
+
       registerUnrecognisedVoter: function(userName) {
         if ($.inArray(userName, unrecognisedVoterList) === -1) {
           var recognisedVoter = false;
@@ -1685,28 +1891,32 @@ var fmu = {
           });
           if (!recognisedVoter) {
             unrecognisedVoterList.push(userName);
-            updateGameData("unrecognisedVoterList", unrecognisedVoterList);
+            localStorage.setItem("unrecognisedVoterList" + threadId, JSON.stringify(unrecognisedVoterList));
           }
         }
       },
+
       recognise: function(playerName) {
         //Checks the unrecognised voter list to see if it can match some new name and remove them from the unrecognised list
         for (var i in unrecognisedVoterList) {
           if (diceCoefficient(unrecognisedVoterList[i], playerName) > 0.9) {
             unrecognisedVoterList.splice(i, 1);
-            updateGameData("unrecognisedVoterList", unrecognisedVoterList);
+            localStorage.setItem("unrecognisedVoterList" + threadId, JSON.stringify(unrecognisedVoterList));
             $(".unrecognised-voter[name='" + playerName + "']").removeClass("unrecognised-voter");
             break;
           }
         }
       },
+
       save: function() {
         localStorage.setItem("players" + threadId, JSON.stringify(this.list));
       },
+
       remove: function(playerName) {
         delete fmu.data.players.list[playerName];
         this.save();
       },
+
       reset: function() {
         this.list = {};
         this.save();
@@ -1721,10 +1931,11 @@ var fmu = {
           this.add(1);
         }
       },
+
       add: function() {
         var startPost = 1;
-        var startDate = getLastNightfall();
-        var endDate = getOffsetDate(getLastNightfall(), 1, 0);
+        var startDate = fmu.data.date.lastNightfall();
+        var endDate = fmu.data.date.offset(fmu.data.date.lastNightfall(), 1, 0);
         var day = this.list.length;
         if (day === 0) {
           day = 1;
@@ -1734,7 +1945,7 @@ var fmu = {
             startPost = this.list[day - 1]["endPost"] + 1;
           }
           var oldEndDate = new Date(this.list[day - 1]["endDate"]);
-          startDate = new Date(oldEndDate.getTime() + scriptSettings.nightBufferTime * 60 * 1000);
+          startDate = new Date(oldEndDate.getTime() + fmu.data.options.script.nightBufferTime * 60 * 1000);
           endDate = new Date(oldEndDate.getTime() + 24 * 60 * 60 * 1000);
         }
         this.list[day] = {
@@ -1748,7 +1959,9 @@ var fmu = {
         };
         this.save();
       },
+
       list: [],
+
       remove: function() {
         if (this.list.length > 2) {
           this.list.pop();
@@ -1758,12 +1971,11 @@ var fmu = {
           return false;
         }
       },
+
       save: function() {
         localStorage.setItem("days" + threadId, JSON.stringify(this.list));
       },
-      updateTally: function() {
-        //Update tally
-      },
+
       reset: function() {
         this.list = [];
         this.save();
@@ -1771,6 +1983,185 @@ var fmu = {
     },
 
     votes: {
+      update: function() {
+        var fulldata = fmu.data.thread.votes.composite();
+        Object.keys(fulldata).forEach(function(post) {
+          var raw = fulldata[post]["r"];
+          var voteType = fmu.data.votes.type(raw);
+          var voteTarget = fmu.data.votes.voteTarget(raw);
+          if (voteType != 0 && (voteType == -1 || voteTarget)) {
+            recognisedVoteList[post] = {};
+            recognisedVoteList[post]["user"] = fulldata[post]["u"];
+            recognisedVoteList[post]["type"] = voteType;
+            recognisedVoteList[post]["target"] = voteTarget;
+            recognisedVoteList[post]["time"] = fulldata[post]["t"];
+            recognisedVoteList[post]["link"] = fulldata[post]["l"];
+            recognisedVoteList[post]["raw"] = raw;
+          }
+        });
+      },
+
+      inRange: function(start, end, day) {
+        var playerVotes = {};
+        var tally = {};
+        Object.keys(recognisedVoteList).forEach(function(post) {
+          post = parseInt(post);
+          if (start instanceof Date) {
+            if (start.getTime() > new Date(recognisedVoteList[post]["time"]).getTime()) {
+              return;
+            }
+          } else {
+            if (start > post) {
+              return;
+            }
+          }
+          if (end instanceof Date) {
+            if (end.getTime() < new Date(recognisedVoteList[post]["time"]).getTime()) {
+              return;
+            }
+          } else {
+            if (end < post) {
+              return;
+            }
+          }
+          var vote = recognisedVoteList[post];
+          var user = vote["user"];
+          if (!fmu.data.players.isAlive(vote["user"], day)) {
+            //Throwing out votes from dead players
+            return;
+          }
+          if (!playerVotes.hasOwnProperty(vote["user"])) {
+            if (!fmu.data.players.list.hasOwnProperty(vote["user"])) {
+              Object.keys(fmu.data.players.list).forEach(function(playerName) {
+                for (var sub in fmu.data.players.list[playerName].subs) {
+                  if (fmu.data.players.list[playerName].subs[sub] === user) {
+                    user = playerName;
+                    break;
+                  }
+                }
+              });
+              if (vote["user"] === user) {
+                //Did not match to sub
+                fmu.data.players.registerUnrecognisedVoter(vote["user"]);
+              }
+            }
+            playerVotes[user] = {};
+          }
+          if (!playerVotes[user].hasOwnProperty("post") || post > playerVotes[user]["post"]) {
+            playerVotes[user]["post"] = post;
+            playerVotes[user]["link"] = vote["link"];
+            if (vote["type"] === 2 || vote["type"] === 1) {
+              playerVotes[user]["target"] = vote["target"];
+            } else if (vote["type"] === -1) {
+              playerVotes[user]["target"] = "";
+            }
+          }
+        });
+        Object.keys(fmu.data.players.list).forEach(function(playerName) {
+          if (!fmu.data.players.isAlive(playerName, day)) {
+            return;
+          }
+          if (!playerVotes.hasOwnProperty(playerName)) {
+            playerVotes[playerName] = {
+              "target": "",
+              "post": 0,
+              "link": ""
+            };
+          }
+        });
+        Object.keys(playerVotes).sort(function(a, b) {
+          return playerVotes[a]["post"] - playerVotes[b]["post"];
+        }).forEach(function(user) {
+          var target = playerVotes[user]["target"];
+          if (!tally[target]) {
+            tally[target] = [];
+          }
+          tally[target].push([user, playerVotes[user]["post"], playerVotes[user]["link"]]);
+        });
+        return tally;
+      },
+
+      voteLogInRange: function(start, end, day) {
+        var voteLog = "";
+        Object.keys(recognisedVoteList).sort(function(a, b) {
+          //Sort by post number
+          return a - b;
+        }).forEach(function(post) {
+          //Filtering for range
+          if (start instanceof Date) {
+            if (start.getTime() > new Date(recognisedVoteList[post]["time"]).getTime()) {
+              return;
+            }
+          } else {
+            if (start > post) {
+              return;
+            }
+          }
+          if (end instanceof Date) {
+            if (end.getTime() < new Date(recognisedVoteList[post]["time"]).getTime()) {
+              return;
+            }
+          } else {
+            if (end < post) {
+              return;
+            }
+          }
+          var type = recognisedVoteList[post]["type"];
+          voteLog += "[#<a href='" + fmu.data.thread.postLink(recognisedVoteList[post]["link"]) + "'>" + post + "</a>] ";
+          voteLog += recognisedVoteList[post]["user"];
+          if (type === 2) {
+            voteLog += " votes " + recognisedVoteList[post]["target"];
+          } else if (type === 1) {
+            voteLog += " unvotes and votes " + recognisedVoteList[post]["target"];
+          } else if (type === -1) {
+            voteLog += " unvotes" + (recognisedVoteList[post]["target"] != null ? " " + recognisedVoteList[post]["target"] : "");
+          }
+          voteLog += "<br />";
+        });
+        return voteLog;
+      },
+
+      type: function(vote) {
+        var hasVote = false;
+        var hasUnvote = false;
+        var lastUnvote = vote.lastIndexOf(fmu.data.options.game.unvoteKeyword);
+        var lastVote = vote.lastIndexOf(fmu.data.options.game.voteKeyword);
+        var lengthDifference = fmu.data.options.game.unvoteKeyword.length - fmu.data.options.game.voteKeyword.length;
+        if (vote.indexOf(fmu.data.options.game.unvoteKeyword) >= 0) {
+          hasUnvote = true;
+        }
+        if (vote.replace(new RegExp(fmu.data.options.game.unvoteKeyword, "g"), "").indexOf(fmu.data.options.game.voteKeyword) >= 0) {
+          hasVote = true;
+        }
+        if (hasVote === true) {
+          if (hasUnvote === true) {
+            if (lastUnvote >= lastVote - lengthDifference) {
+              return -1; //Unvote
+            } else {
+              return 1; //Unvote and vote
+            }
+          } else {
+            return 2; //Vote
+          }
+        } else if (hasUnvote === true) {
+          return -1; //Unvote
+        } else {
+          return 0; //No vote
+        }
+      },
+
+      voteTarget: function(vote) {
+        var voteTarget = vote.split(":").pop().split(fmu.data.options.game.unvoteKeyword).pop().split(fmu.data.options.game.voteKeyword).pop();
+        voteTarget = voteTarget.split("(")[0].split("[")[0].trim();
+        if (voteTarget === "") {
+          return null;
+        } else if (!jQuery.isEmptyObject(fmu.data.players.list)) {
+          return fmu.data.players.match(voteTarget);
+        } else {
+          return voteTarget;
+        }
+      },
+
       bbcode: function(voteRecord, day) {
         var bbcode = "Day " + day + " - ";
         if (fmu.data.days.list[day]["start"] === "start-post") {
@@ -1808,7 +2199,7 @@ var fmu = {
               bbcode += ", ";
             }
             bbcode += voteRecord[target][voter][0];
-            if (scriptSettings.bbcodePostNumbers) {
+            if (fmu.data.options.script.bbcodePostNumbers) {
               bbcode += " (#[post=\""+voteRecord[target][voter][2]+"\"]"+voteRecord[target][voter][1]+"[/post])";
             }
           }
@@ -1859,369 +2250,182 @@ var fmu = {
         }
         return html;
       }
-    }
-  }
-}
+    },
 
-//TODO: Move to controller
-function toggleScriptMode(toggleButton) {
-  if (gameSettings.scriptMode === 0) {
-    gameSettings.scriptMode = 1;
-    updateGameData("gameSettings", gameSettings);
-    fmu.data.reset();
-    fmu.ui.draw();
-    fmu.control.update();
-    toggleButton.text("Delete game");
-  } else {
-    fmu.data.resetLocal();
-    fmu.data.reset();
-    fmu.ui.reset();
-  }
-}
+    date: {
+      parser: {
+        dateToTimeString: function(date) {
+          var hours = date.getUTCHours() + "";
+          var minutes = date.getUTCMinutes() + "";
+          if (hours.length == 1) {
+            hours = "0" + hours;
+          }
+          if (minutes.length == 1) {
+            minutes = "0" + minutes;
+          }
+          return hours + ":" + minutes;
+        },
 
-function getTimeZone() {
-  var timeString = $("div.page div.smallfont").last().text(); //Gets string at bottom which tells time zone
-  timeString = timeString.split("GMT")[1].split(". ")[0]; //Get between "GMT " and ". "
-  return parseFloat(timeString.replace("+","").trim());
-}
+        /* Input: Forum date string such as "Today, Aug 8, 2016 09:30 PM"
+           Output: JS date object in UTC time */
+        stringToDate: function(string) {
+          string = string.replace(/,/g, "");
+          var date = new Date();
+          var stringArr = string.split(" ");
+          var timeArr = stringArr.slice(-2);
+          var time = timeArr[0].split(":");
+          var hours = parseInt(time[0]);
+          var minutes = parseInt(time[1]);
+          if (timeArr[1] == "PM" && hours <= 11) {
+            hours += 12;
+          } else if (hours == 12 && timeArr[1] == "AM") {
+            hours -= 12;
+          }
+          date.setUTCHours(hours);
+          date.setUTCMinutes(minutes);
+          var dateToday = new Date();
+          if (stringArr[0] == "Today") {
+            var relativeDate = fmu.data.date.offset(dateToday, 0, timeZone);
+            date.setUTCFullYear(relativeDate.getUTCFullYear());
+            date.setUTCMonth(relativeDate.getUTCMonth());
+            date.setUTCDate(relativeDate.getUTCDate());
+          } else if (stringArr[0] == "Yesterday") {
+            var relativeDate = fmu.data.date.offset(dateToday, -1, timeZone); //Get yesterday's date in current time zone
+            date.setUTCFullYear(relativeDate.getUTCFullYear());
+            date.setUTCMonth(relativeDate.getUTCMonth());
+            date.setUTCDate(relativeDate.getUTCDate());
+          } else {
+            var dateArr = stringArr.slice(1, -2);
+            var month = monthNames[dateArr[0].toLowerCase()];
+            var day = parseInt(dateArr[1].replace("s","").replace("t","").replace("h","").replace("r","").replace("n","").replace("d",""));
+            date.setUTCDate(day);
+            date.setUTCMonth(month);
+            date.setUTCFullYear(parseInt(dateArr[2]));
+          }
+          date = fmu.data.date.offset(date, 0, -timeZone); //Converting to UTC time
+          return date;
+        },
 
-//TODO: Move to controller
-function toggleBbcodePostNumbers(toggleButton) {
-  if (scriptSettings.bbcodePostNumbers === 0) {
-    scriptSettings.bbcodePostNumbers = 1;
-    localStorage.setItem("fmuSettings", JSON.stringify(scriptSettings));
-    toggleButton.text("On");
-  } else {
-    scriptSettings.bbcodePostNumbers = 0;
-    localStorage.setItem("fmuSettings", JSON.stringify(scriptSettings));
-    toggleButton.text("Off");
-  }
-}
+        timeToString: function(time) {
+          var paddedTime = time + "";
+          while (paddedTime.length < 4) {
+            paddedTime = "0" + paddedTime;
+          }
+          return paddedTime.substr(0, 2) + ":" + paddedTime.substr(2);
+        },
 
-//TODO: Move to fmu.time
-function getLastNightfall() {
-  //Get current date in timeZone
-  var date = getOffsetDate(new Date(), 0, timeZone);
-  var nightfallHours = Math.floor(gameSettings.nightfallTime / 100);
-  var nightfallMinutes = gameSettings.nightfallTime % 100;
-  date.setUTCHours(nightfallHours);
-  date.setUTCMinutes(nightfallMinutes);
-  if (date.getTime() > new Date().getTime()) {
-    return getOffsetDate(date, -1, -timeZone)
-  } else {
-    return getOffsetDate(date, 0, -timeZone)
-  }
-}
-
-//TODO: fmu.time
-function changeNightfallTime(nightfallTimeButton) {
-  var nightfallTime = validateTime(prompt("Enter new time for night"));
-  if (nightfallTime >= 0) {
-    gameSettings.nightfallTime = validateTime(nightfallTime);
-    updateGameData("gameSettings", gameSettings);
-    nightfallTimeButton.text(padTime(gameSettings.nightfallTime));
-    fmu.ui.days.switch(currentDay);
-  }
-}
-
-//TODO: Controller
-function confirmPaste() {
-  $("#paste-wrapper").slideUp();
-  var importedPlayers = $("#paste-area").val().split("\n");
-  for (var i = 0; i < importedPlayers.length; i++) {
-    if (importedPlayers[i].indexOf(".") >= 0) {
-      importedPlayers[i] = importedPlayers[i].split(".")[1];
-    }
-    if (importedPlayers[i].indexOf(")") >= 0) {
-      importedPlayers[i] = importedPlayers[i].split(")")[1];
-    }
-    importedPlayers[i] = importedPlayers[i].trim();
-  }
-  importedPlayers = importedPlayers.filter(Boolean);
-  for (var i = 0; i < importedPlayers.length; i++) {
-    fmu.control.players.add(importedPlayers[i]);
-  }
-}
-
-//TODO: fmu.time
-function formatTimeString(date) {
-  var hours = date.getUTCHours() + "";
-  var minutes = date.getUTCMinutes() + "";
-  if (hours.length == 1) {
-    hours = "0" + hours;
-  }
-  if (minutes.length == 1) {
-    minutes = "0" + minutes;
-  }
-  return hours + ":" + minutes;
-}
-
-//TODO: Move to fmu.data.players
-function getLifeStatus(state) {
-  if (state === 0) {
-    return "alive";
-  } else if (state > 0) {
-    return "dead";
-  } else {
-    return "resurrected";
-  }
-}
-
-function getPhaseName(state) {
-  if (state % 2 == 1) {
-    return "day";
-  } else {
-    return "night";
-  }
-}
-
-function getDeathTime(state) {
-  return Math.ceil(state / 2);
-}
-
-//TODO: Move to controller
-function toggleTallyDisplay(toggleButton) {
-  if (gameSettings.popoutTally) {
-    gameSettings.popoutTally = "";
-    updateGameData("gameSettings", gameSettings);
-    $("#tally-container").removeClass("floating");
-    toggleButton.text("Pop out");
-  } else {
-    gameSettings.popoutTally = "1";
-    updateGameData("gameSettings", gameSettings);
-    $("#tally-container").addClass("floating");
-    toggleButton.text("Close");
-  }
-}
-
-//TODO: fmu.data.days.updateTally
-function updateVoteRecord() {
-  var start = 1;
-  var end = 200000;
-  if (fmu.data.days.list[currentDay]["start"] === "start-post") {
-    start = parseInt(fmu.data.days.list[currentDay]["startPost"]);
-  } else if (fmu.data.days.list[currentDay]["start"] === "start-date") {
-    start = new Date(fmu.data.days.list[currentDay]["startDate"]);
-    start.setUTCSeconds(0, 0);
-  }
-  if (fmu.data.days.list[currentDay]["end"] === "end-post") {
-    end = parseInt(fmu.data.days.list[currentDay]["endPost"]);
-  } else if (fmu.data.days.list[currentDay]["end"] === "end-date") {
-    end = new Date(fmu.data.days.list[currentDay]["endDate"]);
-    end.setUTCSeconds(59, 1000);
-  }
-  parseAllVotes();
-  var voteRecord = "";
-  if (gameSettings.voteRecordMode === "tally") {
-    var tally = getTallyForRange(start, end, currentDay);
-    fmu.data.days.list[currentDay].tally = tally;
-    fmu.data.days.save();
-    voteRecord = fmu.data.votes.html(tally);
-  } else {
-    voteRecord = getVoteLogForRange(start, end);
-    fmu.data.days.list[currentDay].voteLog = voteRecord;
-    fmu.data.days.save();
-  }
-  $("#tally-body").html(voteRecord);
-}
-
-//TODO: Controller
-function toggleVoteRecordMode(toggleButton) {
-  if (gameSettings.voteRecordMode === "tally") {
-    gameSettings.voteRecordMode = "votelog";
-    updateGameData("gameSettings", gameSettings);
-    toggleButton.text("Mode: Vote log");
-  } else {
-    gameSettings.voteRecordMode = "tally";
-    updateGameData("gameSettings", gameSettings);
-    toggleButton.text("Mode: Vote tally");
-  }
-  updateVoteRecord();
-}
-
-function updateGameData(field, object) {
-  localStorage.setItem(field + threadId, JSON.stringify(object));
-}
-
-//fmu.data
-function parseAllVotes() {
-  var fulldata = fmu.data.thread.votes.composite();
-  Object.keys(fulldata).forEach(function(post) {
-    var raw = fulldata[post]["r"];
-    var voteType = getVoteType(raw);
-    var voteTarget = getVoteTarget(raw);
-    if (voteType != 0 && (voteType == -1 || voteTarget)) {
-      recognisedVoteList[post] = {};
-      recognisedVoteList[post]["user"] = fulldata[post]["u"];
-      recognisedVoteList[post]["type"] = voteType;
-      recognisedVoteList[post]["target"] = voteTarget;
-      recognisedVoteList[post]["time"] = fulldata[post]["t"];
-      recognisedVoteList[post]["link"] = fulldata[post]["l"];
-      recognisedVoteList[post]["raw"] = raw;
-    }
-  });
-}
-
-function getVoteType(vote) {
-  var hasVote = false;
-  var hasUnvote = false;
-  var lastUnvote = vote.lastIndexOf(gameSettings.unvoteKeyword);
-  var lastVote = vote.lastIndexOf(gameSettings.voteKeyword);
-  var lengthDifference = gameSettings.unvoteKeyword.length - gameSettings.voteKeyword.length;
-  if (vote.indexOf(gameSettings.unvoteKeyword) >= 0) {
-    hasUnvote = true;
-  }
-  if (vote.replace(new RegExp(gameSettings.unvoteKeyword, "g"), "").indexOf(gameSettings.voteKeyword) >= 0) {
-    hasVote = true;
-  }
-  if (hasVote === true) {
-    if (hasUnvote === true) {
-      if (lastUnvote >= lastVote - lengthDifference) {
-        return -1; //Unvote
-      } else {
-        return 1; //Unvote and vote
-      }
-    } else {
-      return 2; //Vote
-    }
-  } else if (hasUnvote === true) {
-    return -1; //Unvote
-  } else {
-    return 0; //No vote
-  }
-}
-
-function getVoteTarget(vote) {
-  var voteTarget = vote.split(":").pop().split(gameSettings.unvoteKeyword).pop().split(gameSettings.voteKeyword).pop();
-  voteTarget = voteTarget.split("(")[0].split("[")[0].trim();
-  if (voteTarget === "") {
-    return null;
-  } else if (!jQuery.isEmptyObject(fmu.data.players.list)) {
-    return matchPlayer(voteTarget);
-  } else {
-    return voteTarget;
-  }
-}
-
-function getTallyForRange(start, end, day) {
-  var playerVotes = {};
-  var tally = {};
-  Object.keys(recognisedVoteList).forEach(function(post) {
-    post = parseInt(post);
-    if (start instanceof Date) {
-      if (compareDates(start, recognisedVoteList[post]["time"]) > 0) {
-        return;
-      }
-    } else {
-      if (start > post) {
-        return;
-      }
-    }
-    if (end instanceof Date) {
-      if (compareDates(end, recognisedVoteList[post]["time"]) < 0) {
-        return;
-      }
-    } else {
-      if (end < post) {
-        return;
-      }
-    }
-    var vote = recognisedVoteList[post];
-    var user = vote["user"];
-    if (!fmu.data.players.isAlive(vote["user"], day)) {
-      //Throwing out votes from dead players
-      return;
-    }
-    if (!playerVotes.hasOwnProperty(vote["user"])) {
-      if (!fmu.data.players.list.hasOwnProperty(vote["user"])) {
-        Object.keys(fmu.data.players.list).forEach(function(playerName) {
-          for (var sub in fmu.data.players.list[playerName].subs) {
-            if (fmu.data.players.list[playerName].subs[sub] === user) {
-              user = playerName;
-              break;
+        stringToTime: function(string) {
+          var sanitisedTime = time.replace(":","").replace(" ","").replace("h","").replace(".","");
+          var validTime = parseInt(sanitisedTime);
+          if (validTime >= 100) {
+            var hour = Math.floor(validTime / 100);
+            var minute = validTime % 100;
+            if (minute < 60) {
+              if (hour < 24) {
+                if (hour <= 11 && time.toLowerCase().indexOf("pm") >= 0) {
+                  return validTime + 1200;
+                } else if (hour >= 12 && time.toLowerCase().indexOf("am") >= 0) {
+                  return validTime - 1200;
+                } else {
+                  return validTime;
+                }
+              }
+            }
+          } else if (validTime < 60 && sanitisedTime.charAt(0) == "0") {
+            if (time.toLowerCase().indexOf("pm") >= 0) {
+              return validTime + 1200;
+            } else {
+              return validTime;
+            }
+          } else if (validTime < 24) {
+            if (validTime <= 11 && time.toLowerCase().indexOf("pm") >= 0) {
+              return (validTime + 12) * 100;
+            } else if (validTime >= 12 && time.toLowerCase().indexOf("am") >= 0) {
+              return (validTime - 12) * 100;
+            } else {
+              return validTime * 100;
             }
           }
-        });
-        if (vote["user"] === user) {
-          //Did not match to sub
-          fmu.data.players.registerUnrecognisedVoter(vote["user"]);
-        }
-      }
-      playerVotes[user] = {};
-    }
-    if (!playerVotes[user].hasOwnProperty("post") || post > playerVotes[user]["post"]) {
-      playerVotes[user]["post"] = post;
-      playerVotes[user]["link"] = vote["link"];
-      if (vote["type"] === 2 || vote["type"] === 1) {
-        playerVotes[user]["target"] = vote["target"];
-      } else if (vote["type"] === -1) {
-        playerVotes[user]["target"] = "";
-      }
-    }
-  });
-  Object.keys(fmu.data.players.list).forEach(function(playerName) {
-    if (!fmu.data.players.isAlive(playerName, day)) {
-      return;
-    }
-    if (!playerVotes.hasOwnProperty(playerName)) {
-      playerVotes[playerName] = {
-        "target": "",
-        "post": 0,
-        "link": ""
-      };
-    }
-  });
-  Object.keys(playerVotes).sort(function(a, b) {
-    return playerVotes[a]["post"] - playerVotes[b]["post"];
-  }).forEach(function(user) {
-    var target = playerVotes[user]["target"];
-    if (!tally[target]) {
-      tally[target] = [];
-    }
-    tally[target].push([user, playerVotes[user]["post"], playerVotes[user]["link"]]);
-  });
-  return tally;
-}
+          return -1;
+        },
 
-//Takes a range and returns a HTML representation of all votes in that range
-function getVoteLogForRange(start, end) {
-  var voteLog = "";
-  Object.keys(recognisedVoteList).sort(function(a, b) {
-    //Sort by post number
-    return a - b;
-  }).forEach(function(post) {
-    //Filtering for range
-    if (start instanceof Date) {
-      if (compareDates(start, recognisedVoteList[post]["time"]) > 0) {
-        return;
+        to2Digits: function(number) {
+          var paddedNumber = number + "";
+          while (paddedNumber.length < 2) {
+            paddedNumber = "0" + paddedNumber;
+          }
+          return paddedNumber;
+        }
+      },
+
+      lastNightfall: function() {
+        //Get current date in timeZone
+        var date = fmu.data.date.offset(new Date(), 0, timeZone);
+        var nightfallHours = Math.floor(fmu.data.options.game.nightfallTime / 100);
+        var nightfallMinutes = fmu.data.options.game.nightfallTime % 100;
+        date.setUTCHours(nightfallHours);
+        date.setUTCMinutes(nightfallMinutes);
+        if (date.getTime() > new Date().getTime()) {
+          return fmu.data.date.offset(date, -1, -timeZone)
+        } else {
+          return fmu.data.date.offset(date, 0, -timeZone)
+        }
+      },
+
+      offset: function(date, days, hours) {
+        return new Date(date.getTime() + (days * 24 + hours) * 60 * 60 * 1000);
       }
-    } else {
-      if (start > post) {
-        return;
+    },
+
+    options: {
+      init: function() {
+        if (localStorage.getItem("fmuOptions" + threadId)) {
+          this.script = JSON.parse(localStorage.getItem("fmuOptions" + threadId));
+        } else {
+          this.script = {
+            "bbcodePostNumbers": 0, //Whether to show BBCode post numbers
+            "nightBufferTime": 10, //How long a night lasts - used for automatically filling in start times
+            "numberPostsPerPage": 60 //Maximum number of posts per page - Forum default is 60
+          };
+        }
+        if (localStorage.getItem("gameOptions" + threadId)) {
+          this.game = JSON.parse(localStorage.getItem("gameOptions" + threadId));
+        } else {
+          this.game = {
+            "mode": 0, //0 = Off, 1 = On, game config is hidden, 2 = On, game config is shown
+            "day": 1, //The day that is currently selected by the user
+            "nightfallTime": 2000, //Default time for nightfall
+            "popoutTally": 0, //Tally display mode
+            "voteRecordMode": "tally", //Whether tally or vote log is displayed
+            "voteKeyword": "vote", //String used to signify vote
+            "unvoteKeyword": "unvote" //String used to signify unvote
+          };
+        }
+      },
+
+      game: { },
+
+      script: { },
+
+      save: function() {
+        localStorage.setItem("fmuOptions", JSON.stringify(this.script));
+        localStorage.setItem("gameOptions" + threadId, JSON.stringify(this.game));
+      },
+
+      reset: function() {
+        this.game = {
+          "mode": 0, //0 = Off, 1 = On, game config is hidden, 2 = On, game config is shown
+          "day": 1, //The day that is currently selected by the user
+          "nightfallTime": 2000, //Default time for nightfall
+          "popoutTally": 0, //Tally display mode
+          "voteRecordMode": "tally", //Whether tally or vote log is displayed
+          "voteKeyword": "vote", //String used to signify vote
+          "unvoteKeyword": "unvote" //String used to signify unvote
+        };
+        this.save();
       }
     }
-    if (end instanceof Date) {
-      if (compareDates(end, recognisedVoteList[post]["time"]) < 0) {
-        return;
-      }
-    } else {
-      if (end < post) {
-        return;
-      }
-    }
-    var type = recognisedVoteList[post]["type"];
-    voteLog += "[#<a href='" + fmu.data.thread.postLink(recognisedVoteList[post]["link"]) + "'>" + post + "</a>] ";
-    voteLog += recognisedVoteList[post]["user"];
-    if (type === 2) {
-      voteLog += " votes " + recognisedVoteList[post]["target"];
-    } else if (type === 1) {
-      voteLog += " unvotes and votes " + recognisedVoteList[post]["target"];
-    } else if (type === -1) {
-      voteLog += " unvotes" + (recognisedVoteList[post]["target"] != null ? " " + recognisedVoteList[post]["target"] : "");
-    }
-    voteLog += "<br />";
-  });
-  return voteLog;
+  }
 }
 
 function getBigrams(string) {
@@ -2252,46 +2456,6 @@ function diceCoefficient(a, b) {
     }
   }
   return 2 * score / totalSize;
-}
-
-//fmu.data.players
-function matchPlayer(string) {
-  var closestMatch = "No lynch";
-  var highestScore = diceCoefficient(string, "No lynch");
-  if (highestScore == 1) {
-    return closestMatch;
-  }
-  Object.keys(fmu.data.players.list).forEach(function(playerName) {
-    for (var nick in fmu.data.players.list[playerName].nicknames) {
-      var score = diceCoefficient(string, fmu.data.players.list[playerName].nicknames[nick]);
-      if (score >= highestScore) {
-        closestMatch = playerName;
-        highestScore = score;
-      }
-    }
-    for (var sub in fmu.data.players.list[playerName].subs) {
-      var score = diceCoefficient(string, fmu.data.players.list[playerName].subs[sub]);
-      if (score >= highestScore) {
-        closestMatch = playerName;
-        highestScore = score;
-      }
-    }
-    var score = diceCoefficient(string, playerName);
-    if (score >= highestScore) {
-      closestMatch = playerName;
-      highestScore = score;
-    }
-  });
-  if (highestScore > 0) {
-    return closestMatch;
-  } else {
-    //If the highest score is 0 (no similarity), declines to return a player name
-    return string;
-  }
-}
-
-function matchPlayerByDay(string, day) {
-  return matchPlayer(string);
 }
 
 //Returns uppercase characters of a string
@@ -2332,141 +2496,4 @@ function getLowerCase(string) {
     }
   }
   return lowercaseString;
-}
-
-//Takes a forum date string such as "Today, Aug 8, 2016 09:30 PM" and converts into a JavaScript date object
-function parseDateFromString(string) {
-  string = string.replace(/,/g, "");
-  var date = new Date();
-  var stringArr = string.split(" ");
-  var timeArr = stringArr.slice(-2);
-  var time = timeArr[0].split(":");
-  var hours = parseInt(time[0]);
-  var minutes = parseInt(time[1]);
-  if (timeArr[1] == "PM") {
-    hours += 12;
-  }
-  date.setUTCHours(hours);
-  date.setUTCMinutes(minutes);
-  var dateToday = new Date();
-  if (stringArr[0] == "Today") {
-    var relativeDate = getOffsetDate(dateToday, 0, timeZone);
-    date.setUTCFullYear(relativeDate.getUTCFullYear());
-    date.setUTCMonth(relativeDate.getUTCMonth());
-    date.setUTCDate(relativeDate.getUTCDate());
-  } else if (stringArr[0] == "Yesterday") {
-    var relativeDate = getOffsetDate(dateToday, -1, timeZone); //Get yesterday's date in current time zone
-    date.setUTCFullYear(relativeDate.getUTCFullYear());
-    date.setUTCMonth(relativeDate.getUTCMonth());
-    date.setUTCDate(relativeDate.getUTCDate());
-  } else {
-    var dateArr = stringArr.slice(1, -2);
-    var month = monthNames[dateArr[0].toLowerCase()];
-    var day = parseInt(dateArr[1].replace("s","").replace("t","").replace("h","").replace("r","").replace("n","").replace("d",""));
-    date.setUTCDate(day);
-    date.setUTCMonth(month);
-    date.setUTCFullYear(parseInt(dateArr[2]));
-  }
-  date = getOffsetDate(date, 0, -timeZone); //Converting to UTC time
-  return date;
-}
-
-function validateTime(time) {
-  var sanitisedTime = time.replace(":","").replace(" ","").replace("h","").replace(".","");
-  var validTime = parseInt(sanitisedTime);
-  if (validTime >= 100) {
-    var hour = Math.floor(validTime / 100);
-    var minute = validTime % 100;
-    if (minute < 60) {
-      if (hour < 24) {
-        if (hour <= 11 && time.toLowerCase().indexOf("pm") >= 0) {
-          return validTime + 1200;
-        } else if (hour >= 12 && time.toLowerCase().indexOf("am") >= 0) {
-          return validTime - 1200;
-        } else {
-          return validTime;
-        }
-      }
-    }
-  } else if (validTime < 60 && sanitisedTime.charAt(0) == "0") {
-    if (time.toLowerCase().indexOf("pm") >= 0) {
-      return validTime + 1200;
-    } else {
-      return validTime;
-    }
-  } else if (validTime < 24) {
-    if (validTime <= 11 && time.toLowerCase().indexOf("pm") >= 0) {
-      return (validTime + 12) * 100;
-    } else if (validTime >= 12 && time.toLowerCase().indexOf("am") >= 0) {
-      return (validTime - 12) * 100;
-    } else {
-      return validTime * 100;
-    }
-  }
-  return -1;
-}
-
-function compareDates(a, b) {
-  var date1 = new Date(a).getTime();
-  var date2 = new Date(b).getTime();
-  if (date1 == date2) {
-    return 0;
-  } else if (date1 > date2) {
-    return 1;
-  } else {
-    return -1;
-  }
-}
-
-function padTime(time) {
-  var paddedTime = time + "";
-  while (paddedTime.length < 4) {
-    paddedTime = "0" + paddedTime;
-  }
-  return paddedTime.substr(0, 2) + ":" + paddedTime.substr(2);
-}
-
-function padTo2Digits(number) {
-  var paddedNumber = number + "";
-  while (paddedNumber.length < 2) {
-    paddedNumber = "0" + paddedNumber;
-  }
-  return paddedNumber;
-}
-
-function getOffsetDate(date, days, hours) {
-  return new Date(date.getTime() + (days * 24 + hours) * 60 * 60 * 1000);
-}
-
-function getPageStatus(thread, page) {
-  var numSaved = localStorage.getItem("pageStatus" + thread + "-" + page)
-  if (!numSaved) {
-    return 0;
-  } else {
-    return parseInt(numSaved);
-  }
-}
-
-function getPostUsername(post) {
-  return post.find(".bigusername").text();
-}
-
-function getPostTime(post) {
-  return post.find(".thead").first().text().trim();
-}
-
-function getPostBody(post) {
-  return post.find(".alt1").children("div");
-}
-
-function getPostBoldText(post) {
-  return post.find(".alt1").children("div").children("b");
-}
-
-function getPostId(post) {
-  return post.find(".thead").children("[id^=postcount]").attr("id").replace("postcount","");
-}
-
-function getPostNumber(post) {
-  return post.find(".thead").children("[id^=postcount]").attr("name");
 }
