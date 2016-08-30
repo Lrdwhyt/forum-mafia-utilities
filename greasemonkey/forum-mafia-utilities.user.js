@@ -447,6 +447,15 @@ var fmu = {
           }))
           .append($("<br />"))
           .append($("<span />", {
+            text: "Exclude dead players"
+          }))
+          .append($("<button />", {
+            class: "function-button",
+            id: "toggle-exclude-dead-players",
+            text: "On"
+          }))
+          .append($("<br />"))
+          .append($("<span />", {
             text: "Night buffer time (minutes)"
           }))
           .append($("<button />", {
@@ -468,6 +477,9 @@ var fmu = {
       .insertAfter("#qrform");
       if (fmu.data.options.script.bbcodePostNumbers) {
         $("#toggle-bbcode-post-numbers").text("On");
+      }
+      if (!fmu.data.options.script.excludeDeadPlayers) {
+        $("#toggle-exclude-dead-players").text("Off");
       }
     },
 
@@ -960,6 +972,9 @@ var fmu = {
       $("#toggle-bbcode-post-numbers").on("click", function() {
         fmu.control.options.toggleBbcodePostNumbers($(this));
       });
+      $("#toggle-exclude-dead-players").on("click", function() {
+        fmu.control.options.toggleExcludeDeadPlayers($(this));
+      })
       $("#night-buffer-time").on("click", function() {
         var newBuffer = parseInt(prompt("Enter night buffer time in minutes"));
         if (newBuffer > 0) {
@@ -973,6 +988,7 @@ var fmu = {
           localStorage.clear();
           fmu.data.options.script = {
             "bbcodePostNumbers": 0, //BBCode post numbers
+            "excludeDeadPlayers": 1, //Whether to exclude dead players in vote tallies
             "nightBufferTime": 10, //How long a night lasts - used for automatically filling in start times
             "numberPostsPerPage": 60 //Maximum number of posts per page - Forum default is 60
           };
@@ -1022,6 +1038,7 @@ var fmu = {
       $("#tally-body").on("click",".unrecognised-voter", function() {
         var playerName = $(this).attr("name");
         fmu.control.players.add(playerName);
+        $(this).removeClass("unrecognised-voter");
       })
       $("#update-vote-record").on("click", fmu.control.votes.update);
       $("#toggle-vote-record-mode").on("click", function() {
@@ -1402,7 +1419,7 @@ var fmu = {
         if (type === "bbcode") {
           if (!jQuery.isEmptyObject(fmu.data.days.list[currentDay].tally)) {
             $("#fmu-main-container").append("<textarea id='data-container'></textarea>");
-            $("#data-container").val(fmu.data.votes.bbcode(fmu.data.days.list[currentDay].tally, currentDay));
+            $("#data-container").val(fmu.data.votes.bbcodeTally(fmu.data.days.list[currentDay].tally, currentDay));
             $("#data-container").select();
             document.execCommand("copy");
             $("#data-container").remove();
@@ -1456,6 +1473,18 @@ var fmu = {
           toggleButton.text("On");
         } else {
           fmu.data.options.script.bbcodePostNumbers = 0;
+          fmu.data.options.save();
+          toggleButton.text("Off");
+        }
+      },
+
+      toggleExcludeDeadPlayers: function(toggleButton) {
+        if (fmu.data.options.script.excludeDeadPlayers === 0) {
+          fmu.data.options.script.excludeDeadPlayers = 1;
+          fmu.data.options.save();
+          toggleButton.text("On");
+        } else {
+          fmu.data.options.script.excludeDeadPlayers = 0;
           fmu.data.options.save();
           toggleButton.text("Off");
         }
@@ -2056,9 +2085,9 @@ var fmu = {
             }
           }
           var user = log[i]["user"];
-          if (!fmu.data.players.isAlive(log[i]["user"], day)) {
+          if (fmu.data.options.script.excludeDeadPlayers && !fmu.data.players.isAlive(log[i]["user"], day)) {
             //Throwing out votes from dead players
-            return;
+            continue;
           }
           if (!playerVotes.hasOwnProperty(log[i]["user"])) {
             if (!fmu.data.players.list.hasOwnProperty(log[i]["user"])) {
@@ -2209,7 +2238,7 @@ var fmu = {
         }
       },
 
-      bbcode: function(tally, day) {
+      bbcodeTally: function(tally, day) {
         if (tally.length == 0) {
           return "";
         }
@@ -2429,11 +2458,12 @@ var fmu = {
 
     options: {
       init: function() {
-        if (localStorage.getItem("fmuOptions" + threadId)) {
-          this.script = JSON.parse(localStorage.getItem("fmuOptions" + threadId));
+        if (localStorage.getItem("fmuOptions")) {
+          this.script = JSON.parse(localStorage.getItem("fmuOptions"));
         } else {
           this.script = {
             "bbcodePostNumbers": 0, //Whether to show BBCode post numbers
+            "excludeDeadPlayers": 1, //Whether to exclude dead players in vote tallies
             "nightBufferTime": 10, //How long a night lasts - used for automatically filling in start times
             "numberPostsPerPage": 60 //Maximum number of posts per page - Forum default is 60
           };
