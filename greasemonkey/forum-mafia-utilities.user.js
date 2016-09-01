@@ -3,7 +3,7 @@
 // @namespace   lrdwhyt
 // @description Number of added functionalities to make playing forum mafia easier. Designed for Forums of Loathing.
 // @include     http://forums.kingdomofloathing.com/vb/showthread.php?*
-// @version     0.4.0
+// @version     0.5.0
 // @grant       GM_addStyle
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js
 // ==/UserScript==
@@ -402,41 +402,42 @@ GM_addStyle(`
 }
 .group-list {
   display: none;
+  position: absolute;
+  top: 0;
+  left: -25px;
+  white-space: nowrap;
+  z-index: 2;
 }
 .group-list.selected {
   display: inline-block;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 2;
+
+}
+.group-wrapper {
+  display: block;
+  margin-top: -20px;
+  padding: 30px;
 }
 .player-name {
   margin-left: 0 !important;
 }
-.group-wrapper {
-  display: block;
-  margin-top: 0px;
-  padding: 15px 5px;
-}
 #player-list .group-selector .group-choice {
-  background-color: #f5f5f5;
+  box-shadow: 0 0 2px rgba(0,0,0,0.5);
+  color: #fff;
   cursor: pointer;
   display: inline;
   margin: 5px;
+  opacity: 0.7;
   padding: 5px 10px;
   user-select: none;
   -moz-user-select: none;
-  box-shadow: 0 0 2px rgba(0,0,0,0.5);
+  white-space: nowrap;
 }
 #player-list .group-selector .group-choice:hover {
-  background-color: var(--main-colour1);
+  opacity: 1;
 }
 .current-group:focus {
   background-color: #f5f5f5;
   outline: none;
-}
-.group-choice {
-  color: #fff;
 }
 .player-controls {
   display: none;
@@ -446,6 +447,9 @@ GM_addStyle(`
 }
 li.player-block:hover .player-controls {
   display: inline;
+}
+#group-listing {
+  display: inline-block;
 }
 .group-item {
   display: inline-block;
@@ -1006,9 +1010,6 @@ var fmu = {
             title: "Remove this player"
           })))
         .appendTo("#player-list");
-        for (var group in fmu.data.options.game.groups) {
-
-        }
         fmu.ui.players.list[playerName] = playerBlock;
       },
 
@@ -1020,6 +1021,23 @@ var fmu = {
         playerBlock.attr("name", newName);
         for (var i in fmu.data.players.unrecognised.list) {
           $(".unrecognised-voter[name='" + oldName + "']").attr("name", newName);
+        }
+      },
+
+      /* Updates group selector for a certain player
+         Called once when a player is added and once for each player
+         when a group is added */
+      updateGroups: function(playerName) {
+        var groupWrapper = this.list[playerName].find(".group-wrapper");
+        groupWrapper.html("");
+        for (var group in fmu.data.options.game.groups) {
+          $("<div />", {
+            class: "group-choice",
+            name: group,
+            text: group
+          })
+          .css("background-color", fmu.data.options.game.groups[group])
+          .appendTo($(groupWrapper));
         }
       },
 
@@ -1076,6 +1094,9 @@ var fmu = {
         for (var group in fmu.data.options.game.groups) {
           fmu.ui.groups.add(group);
         }
+        for (var player in fmu.data.players.list) {
+          fmu.ui.players.updateGroups(player);
+        }
       },
 
       add: function(groupName) {//TODO: Format and make pretty
@@ -1092,13 +1113,6 @@ var fmu = {
             text: groupName
           }))
         .appendTo($("#group-listing"));
-        $("<div />", {
-          class: "group-choice",
-          name: groupName,
-          text: groupName
-        })
-        .css("background-color", fmu.data.options.game.groups[groupName])
-        .appendTo($(".group-wrapper"));
       },
 
       remove: function(groupName) {
@@ -1258,6 +1272,9 @@ var fmu = {
       $("#confirm-paste").on("click", fmu.control.players.import);
       $("#reset-players").on("click", fmu.control.players.reset);
 
+      $("#player-list").on("mousedown", ".group-choice", function() {
+        fmu.control.players.switchGroup($(this).parents(".player-block").attr("name"), $(this).attr("name"));
+      })
       $("#player-list").on("click", ".player-name", function() {
         var oldName = $(this).text();
         var newName = prompt("Enter new player name.", oldName);
@@ -1356,6 +1373,7 @@ var fmu = {
           fmu.data.players.add(playerName);
           fmu.data.players.unrecognised.update(playerName);
           fmu.ui.players.add(playerName);
+          fmu.ui.players.updateGroups(playerName);
         }
       },
 
@@ -1380,6 +1398,12 @@ var fmu = {
       updateState: function(playerName, newState) {
         fmu.data.players.updateState(playerName, newState);
         fmu.ui.players.updateState(playerName);
+      },
+
+      switchGroup: function(playerName, groupName) {
+        fmu.data.players.list[playerName].group = groupName;
+        fmu.data.players.save();
+        fmu.ui.players.list[playerName].find(".current-group").css("background-color", fmu.data.options.game.groups[fmu.data.players.list[playerName].group]);
       },
 
       subs: {
@@ -1558,9 +1582,12 @@ var fmu = {
     groups: {
       add: function(groupName) {
         if (!fmu.data.options.game.groups.hasOwnProperty(groupName)) {
-          fmu.data.options.game.groups[groupName] = "#ff00ff";
+          fmu.data.options.game.groups[groupName] = "#000000";
           fmu.data.options.save();
           fmu.ui.groups.add(groupName);
+          for (var player in fmu.data.players.list) {
+            fmu.ui.players.updateGroups(player);
+          }
         }
       },
 
@@ -1568,13 +1595,18 @@ var fmu = {
         fmu.data.options.game.groups[groupName] = colour;
         fmu.data.options.save();
         $("#group-listing").find("[name='" + groupName + "'] .group-colour").css("background-color", colour);
+        for (var player in fmu.data.players.list) {
+          fmu.ui.players.updateGroups(player);
+        }
       },
 
       remove: function(groupName) {
         if (groupName != "unknown" && fmu.data.options.game.groups.hasOwnProperty(groupName)) {
-          delete fmu.data.options.game.groups[groupName];
-          fmu.data.options.save();
+          fmu.data.options.removeGroup(groupName);
           fmu.ui.groups.remove(groupName);
+          for (var player in fmu.data.players.list) {
+            fmu.ui.players.updateGroups(player);
+          }
         }
       }
     },
@@ -2053,6 +2085,8 @@ var fmu = {
           return "#880000";
         } else if (!this.isAlive(playerName, day)) {
           return "#aaaaaa";
+        } else if (fmu.data.options.game.groups[this.list[playerName].group] != "#000000"){
+          return fmu.data.options.game.groups[this.list[playerName].group];
         } else {
           return "";
         }
@@ -2445,7 +2479,7 @@ var fmu = {
         if (tally.length == 0) {
           return "";
         }
-        var bbcode = "Day " + day + " - ";
+        var bbcode = "[b]Day " + day + "[/b] - [i]Tally generated via Forum Mafia Utilities[/i]\n";
         if (fmu.data.days.list[day]["start"] === "start-post") {
           bbcode += "Post " + fmu.data.days.list[day]["startPost"];
         } else {
@@ -2461,21 +2495,21 @@ var fmu = {
           endDate.pop();
           bbcode += endDate.join(":").trim() + " UTC";
         }
-        bbcode += " - Tally generated via Forum Mafia Utilities";
         bbcode += "\n\n";
         var l = tally.length;
         var noVoteIndex = -1;
         for (var i = 0; i < l; i++) {
           if (tally[i]["target"] != "") {
-            if (!fmu.data.players.isAlive(tally[i]["target"], day)) {
-              bbcode += "[color=#cccccc]";
+            var colour = fmu.data.players.colour(tally[i]["target"], day);
+            if (colour) {
+              bbcode += "[color=" + colour + "]";
             }
             bbcode += "[b]" + tally[i]["target"] + " (" + tally[i]["voters"].length;
             if (tally[i]["voters"].length % 10 == 8) {
               bbcode += "[u][/u]";
             }
             bbcode += ")[/b]";
-            if (!fmu.data.players.isAlive(tally[i]["target"], day)) {
+            if (colour) {
               bbcode += "[/color]";
             }
             bbcode += " - [size=1]";
@@ -2484,15 +2518,12 @@ var fmu = {
               if (voter > 0) {
                 bbcode += ", ";
               }
-              if (!fmu.data.players.list.hasOwnProperty(tally[i]["voters"][voter]["user"])) {
-                bbcode += "[color=#880000]";
-              } else if (!fmu.data.players.isAlive(tally[i]["voters"][voter]["user"], day)) {
-                bbcode += "[color=#cccccc]";
+              var colour = fmu.data.players.colour(tally[i]["voters"][voter]["user"]);
+              if (colour) {
+                bbcode += "[color=" + colour + "]";
               }
               bbcode += tally[i]["voters"][voter]["user"];
-              if (!fmu.data.players.list.hasOwnProperty(tally[i]["voters"][voter]["user"])) {
-                bbcode += "[/color]";
-              } else if (!fmu.data.players.isAlive(tally[i]["voters"][voter]["user"], day)) {
+              if (colour) {
                 bbcode += "[/color]";
               }
               if (fmu.data.options.script.bbcodePostNumbers) {
@@ -2507,9 +2538,19 @@ var fmu = {
         if (noVoteIndex >= 0) {
           var voterList = "";
           for (var nonvoter in tally[noVoteIndex]["voters"]) {
-            voterList += "<span class='voter-wrap'><span class='voter-name'>" + tally[noVoteIndex]["voters"][nonvoter]["user"] + "</span></span>";
+            if (nonvoter > 0) {
+              voterList += ", ";
+            }
+            var colour = fmu.data.players.colour(tally[noVoteIndex]["voters"][nonvoter]["user"], day);
+            if (colour) {
+              voterList += "[color=" + colour + "]";
+            }
+            voterList += tally[noVoteIndex]["voters"][nonvoter]["user"];
+            if (colour) {
+              voterList += "[/color]";
+            }
           }
-          bbcode += "<span class='vote-count no-vote'>" + tally[noVoteIndex]["voters"].length + "</span><span class='voted-name no-vote'>No vote</span><span class='voter-name-list'>" + voterList + "</span><br>";
+          bbcode += "\n[b]No vote (" + tally[noVoteIndex]["voters"].length + ")[/b] - " + voterList + "";
         }
         return bbcode;
       },
@@ -2522,10 +2563,11 @@ var fmu = {
           if (tally[i]["target"] != "") {
             var voterList = "";
             for (var voter in tally[i]["voters"]) {
+              var colour = fmu.data.players.colour(tally[i]["voters"][voter]["user"], day);
               if (!fmu.data.players.list.hasOwnProperty(tally[i]["voters"][voter]["user"])) {
                 voterList += "<span class='voter-wrap'><a class='vote-link' href='" + fmu.data.thread.postLink(tally[i]["voters"][voter]["link"]) + "'>" + tally[i]["voters"][voter]["post"] + "</a><span class='voter-name unrecognised-voter' name='" + tally[i]["voters"][voter]["user"] + "'>" + tally[i]["voters"][voter]["user"] + "</span></span>";
               } else {
-                voterList += "<span class='voter-wrap'><a class='vote-link' href='" + fmu.data.thread.postLink(tally[i]["voters"][voter]["link"]) + "'>" + tally[i]["voters"][voter]["post"] + "</a><span class='voter-name'>" + tally[i]["voters"][voter]["user"] + "</span></span>";
+                voterList += "<span class='voter-wrap'><a class='vote-link' href='" + fmu.data.thread.postLink(tally[i]["voters"][voter]["link"]) + "'>" + tally[i]["voters"][voter]["post"] + "</a><span class='voter-name' style='color: " + colour + ";'>" + tally[i]["voters"][voter]["user"] + "</span></span>";
               }
             }
             html += "<span class='vote-count'>" + tally[i]["voters"].length + "</span><span class='voted-name'>" + tally[i]["target"] + "</span><span class='voter-name-list'>" + voterList + "</span><br>";
@@ -2711,6 +2753,17 @@ var fmu = {
       game: {},
 
       script: {},
+
+      removeGroup: function(groupName) {
+        delete fmu.data.options.game.groups[groupName];
+        for (var player in fmu.data.players.list) {
+          if (fmu.data.players.list[player].group === groupName) {
+            fmu.data.players.list[player].group = "unknown";
+            fmu.control.players.switchGroup(player, "unknown");
+          }
+        }
+        this.save();
+      },
 
       save: function() {
         localStorage.setItem("fmuOptions", JSON.stringify(this.script));
