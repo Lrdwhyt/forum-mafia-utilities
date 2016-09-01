@@ -21,10 +21,16 @@ GM_addStyle(`
   --button-colour: #fff;
   --button-colour1: #f5f5f5;
 }
+
 #script-manager {
   background-color: var(--light-colour0);
   margin-top: 10px;
 }
+#fmu-main-container {
+  margin-bottom: 10px;
+  padding-top: 10px;
+}
+
 #script-title {
   background-color: var(--main-colour0);
   color: #fff;
@@ -53,10 +59,7 @@ GM_addStyle(`
 #help-link:hover {
   background-color: #455a64;
 }
-#fmu-main-container {
-  margin-bottom: 10px;
-  padding-top: 10px;
-}
+
 #page-container {
   margin: 10px 0;
 }
@@ -79,25 +82,6 @@ GM_addStyle(`
 .empty-save:hover {
   background-color: var(--light-colour1);
 }
-.full-data-day {
-  background-color: var(--main-colour0);
-  color: #fff !important;
-}
-.full-data-day:hover {
-  background-color: var(--main-colour1);
-}
-.day-tab.partial-data-day {
-  background-color: var(--secondary-colour0);
-}
-.partial-data-day:hover {
-  background-color: var(--secondary-colour1);
-}
-.day-tab.empty-data-day {
-  background-color: var(--light-colour0);
-}
-.empty-data-day:hover {
-  background-color: var(--light-colour1);
-}
 .page-link {
   -moz-transition-duration: 0.3s;
   -webkit-transition-duration: 0.3s;
@@ -118,7 +102,8 @@ GM_addStyle(`
   display: inline-block;
   padding: 5px 10px;
 }
-#script-manager button, #fmu-main-container button, #settings-display button {
+
+#script-manager button, #fmu-main-container button {
   display: inline-block;
   font-family: Verdana, sans-serif;
   margin: 5px;
@@ -134,12 +119,15 @@ GM_addStyle(`
   background-color: var(--button-colour1);
   border-color: var(--button-colour1);
 }
+.edit-button {
+  cursor: text;
+}
 .function-button {
   -moz-transition-duration: 0.3s;
   -webkit-transition-duration: 0.3s;
   background-color: #607d8b;
   border: none;
-  box-shadow: 0 0 1px #333;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.5);
   color: #fff;
 }
 .function-button:hover {
@@ -148,6 +136,7 @@ GM_addStyle(`
 .function-button:active {
   background-color: #546e7a;
 }
+
 .day-tab {
   -moz-transition: background-color 0.5s;
   -webkit-transition: background-color 0.5s;
@@ -155,11 +144,31 @@ GM_addStyle(`
   display: inline-block;
   padding: 5px 10px;
 }
+.full-data-day {
+  background-color: var(--main-colour0);
+  color: #fff;
+}
+.full-data-day:hover {
+  background-color: var(--main-colour1);
+}
+.partial-data-day {
+  background-color: var(--secondary-colour0);
+}
+.partial-data-day:hover {
+  background-color: var(--secondary-colour1);
+}
+.empty-data-day {
+  background-color: var(--light-colour0);
+}
+.empty-data-day:hover {
+  background-color: var(--light-colour1);
+}
 #add-day {
   -moz-transition-duration: 0.5s;
   -webkit-transition-duration: 0.5s;
   background-color: var(--light-colour0);
   color: var(--main-colour0);
+  cursor: pointer;
   display: inline-block;
   padding: 5px;
   text-align: center;
@@ -167,13 +176,13 @@ GM_addStyle(`
 }
 #add-day:hover {
   background-color: var(--light-colour1);
-  cursor: pointer;
 }
 #remove-day {
   -moz-transition-duration: 0.3s;
   -webkit-transition-duration: 0.3s;
   background-color: var(--contrast-colour0);
   color: var(--light-colour0);
+  cursor: pointer;
   display: inline-block;
   padding: 5px;
   text-align: center;
@@ -181,11 +190,18 @@ GM_addStyle(`
 }
 #remove-day:hover {
   background-color: var(--contrast-colour1);
-  cursor: pointer;
 }
+
 #day-area {
   background-color: var(--light-colour0);
   padding: 10px;
+}
+#tally-body {
+  background-color: var(--light-colour0);
+  padding: 10px 0;
+}
+#tally-controls {
+  margin-top: 10px;
 }
 #tally-container.floating #tally-wrapper {
   left: 0;
@@ -195,18 +211,11 @@ GM_addStyle(`
   position: fixed;
   top: 0;
 }
-#tally-body {
-  background-color: var(--light-colour0);
-  padding: 10px 0;
-}
-#tally-container.floating #tally-body {
-  padding: 10px;
-}
 #tally-container.floating:hover #tally-wrapper {
   opacity: 0.9;
 }
-#tally-controls {
-  margin-top: 10px;
+#tally-container.floating #tally-body {
+  padding: 10px;
 }
 #tally-container.floating #tally-controls {
   bottom: 0;
@@ -274,6 +283,7 @@ GM_addStyle(`
   background-color: var(--secondary-colour0);
   color: #333;
 }
+
 #day-ranges button {
   border-bottom: 3px solid #fff;
   padding-bottom: 6px;
@@ -320,6 +330,7 @@ GM_addStyle(`
 #day-ranges .input-button:hover {
   background-color: var(--button-colour1);
 }
+
 #data-container {
   height: 0;
   opacity: 0;
@@ -339,6 +350,7 @@ GM_addStyle(`
 #paste-wrapper {
   display: none;
 }
+
 .alive-player .player-state {
   color: var(--main-colour0);
 }
@@ -366,19 +378,65 @@ GM_addStyle(`
 .dead-player .player-name {
   text-decoration: line-through;
 }
-.player-block button {
-  margin: 1px 5px !important;
+#player-list button {
+  margin: 2px 5px;
+  padding: 5px 7px;
 }
-.player-block button {
-  margin: 2px 5px !important;
-  padding: 5px 7px !important;
+#player-list .current-group {
+  border: none;
+  margin: 0;
+  overflow: hidden;
+  padding: 5px 4px;
+  white-space: nowrap;
+  width: 0;
+  color: #fff;
+  text-indent: 20px;
 }
 .player-name {
   cursor: text;
   font-weight: bold;
 }
-.input-button.edit-button {
-  cursor: text;
+.group-selector {
+  display: inline-block;
+  position: relative;
+}
+.group-list {
+  display: none;
+}
+.group-list.selected {
+  display: inline-block;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 2;
+}
+.player-name {
+  margin-left: 0 !important;
+}
+.group-wrapper {
+  display: block;
+  margin-top: 0px;
+  padding: 15px 5px;
+}
+#player-list .group-selector .group-choice {
+  background-color: #f5f5f5;
+  cursor: pointer;
+  display: inline;
+  margin: 5px;
+  padding: 5px 10px;
+  user-select: none;
+  -moz-user-select: none;
+  box-shadow: 0 0 2px rgba(0,0,0,0.5);
+}
+#player-list .group-selector .group-choice:hover {
+  background-color: var(--main-colour1);
+}
+.current-group:focus {
+  background-color: #f5f5f5;
+  outline: none;
+}
+.group-choice {
+  color: #fff;
 }
 .player-controls {
   display: none;
@@ -388,7 +446,22 @@ GM_addStyle(`
 }
 li.player-block:hover .player-controls {
   display: inline;
-}`);
+}
+.group-item {
+  display: inline-block;
+  margin: 0 10px;
+}
+.group-name {
+  margin: 0 !important;
+}
+.group-colour {
+  margin: 0 !important;
+  overflow: hidden;
+  padding: 9px 4px !important;
+  text-indent: 8px;
+  width: 0;
+}
+`);
 
 $(document).ready(function () {
   fmu.data.init();
@@ -437,22 +510,36 @@ var fmu = {
           id: "settings-display"
         })
           .append($("<span />", {
-            text: "BBCode post numbers"
+            text: "BBCode vote tallies"
           }))
           .append($("<button />", {
             class: "function-button",
             id: "toggle-bbcode-post-numbers",
-            text: "Off",
+            text: "Exclude post numbers",
             title: "Toggle post numbers on/off for BBCode tallies"
           }))
-          .append($("<br />"))
-          .append($("<span />", {
+          .append($("<button />", {
+            class: "function-button",
+            id: "toggle-include-dead-players",
             text: "Exclude dead players"
           }))
           .append($("<button />", {
             class: "function-button",
-            id: "toggle-exclude-dead-players",
-            text: "On"
+            id: "toggle-bbcode-colours",
+            text: "Include colours"
+          }))
+          .append($("<button />", {
+            class: "function-button",
+            text: "Include unvotes (unimplemented)"
+          }))
+          .append($("<br />"))
+          .append($("<span />", {
+            text: "Posts per page"
+          }))
+          .append($("<button />", {
+            class: "edit-button input-button",
+            id: "number-posts-per-page",
+            text: "60"
           }))
           .append($("<br />"))
           .append($("<span />", {
@@ -476,10 +563,10 @@ var fmu = {
           })))
       .insertAfter("#qrform");
       if (fmu.data.options.script.bbcodePostNumbers) {
-        $("#toggle-bbcode-post-numbers").text("On");
+        $("#toggle-bbcode-post-numbers").text("Include post numbers");
       }
-      if (!fmu.data.options.script.excludeDeadPlayers) {
-        $("#toggle-exclude-dead-players").text("Off");
+      if (fmu.data.options.script.includeDeadPlayers) {
+        $("#toggle-include-dead-players").text("Include dead players");
       }
     },
 
@@ -706,11 +793,23 @@ var fmu = {
         .append($("<ol />", {
           id: "player-list"
         })))
+        .append($("<div />", {
+          id: "group-manager"
+        })
+        .append($("<div />", {
+          id: "group-listing"
+        }))
+        .append($("<button />", {
+          class: "function-button",
+          id: "add-group",
+          text: "+"
+        })))
       .appendTo($("#fmu-main-container"));
       fmu.ui.pages.init();
       fmu.ui.days.init();
       fmu.ui.mods.init();
       fmu.ui.players.init();
+      fmu.ui.groups.init();
       if (fmu.data.options.game.mode == 2) {
         $("#game-configuration").show();
         $("#toggle-game-configuration").text("Hide game configuration");
@@ -849,10 +948,24 @@ var fmu = {
       list: {},
 
       add: function(playerName) {
+        var groupWrapper = $("<div />", {
+          class: "group-wrapper"
+        });
         var playerBlock = $("<li />", {
           class: "player-block alive-player",
           name: playerName
         })
+        .append($("<div />", {
+          class: "group-selector"
+        })
+        .append($("<button />", {
+          class: "current-group",
+          text: "group"
+        }).css("background-color", fmu.data.options.game.groups[fmu.data.players.list[playerName].group]))
+        .append($("<div />", {
+          class: "group-list"
+        })
+        .append(groupWrapper)))
           .append($("<button />", {
             class: "player-name input-button edit-button",
             text: playerName,
@@ -893,6 +1006,9 @@ var fmu = {
             title: "Remove this player"
           })))
         .appendTo("#player-list");
+        for (var group in fmu.data.options.game.groups) {
+
+        }
         fmu.ui.players.list[playerName] = playerBlock;
       },
 
@@ -955,6 +1071,41 @@ var fmu = {
       }
     },
 
+    groups: {
+      init: function() {
+        for (var group in fmu.data.options.game.groups) {
+          fmu.ui.groups.add(group);
+        }
+      },
+
+      add: function(groupName) {//TODO: Format and make pretty
+        $("<div />", {
+          class: "group-item",
+          name: groupName
+        })
+          .append($("<button />", {
+            class: "input-button group-colour",
+            text: "#"
+          }).css("background-color", fmu.data.options.game.groups[groupName]))
+          .append($("<button />", {
+            class: "input-button group-name", //TODO: Better class names
+            text: groupName
+          }))
+        .appendTo($("#group-listing"));
+        $("<div />", {
+          class: "group-choice",
+          name: groupName,
+          text: groupName
+        })
+        .css("background-color", fmu.data.options.game.groups[groupName])
+        .appendTo($(".group-wrapper"));
+      },
+
+      remove: function(groupName) {
+        $("#group-listing").find("[name='" + groupName + "']").remove();
+      }
+    },
+
     reset: function() {
       $("#fmu-main-container").remove();
       $("#toggle-script").text("Start game");
@@ -972,7 +1123,7 @@ var fmu = {
       $("#toggle-bbcode-post-numbers").on("click", function() {
         fmu.control.options.toggleBbcodePostNumbers($(this));
       });
-      $("#toggle-exclude-dead-players").on("click", function() {
+      $("#toggle-include-dead-players").on("click", function() {
         fmu.control.options.toggleExcludeDeadPlayers($(this));
       })
       $("#night-buffer-time").on("click", function() {
@@ -986,12 +1137,7 @@ var fmu = {
       $("#clear-data").on("click", function() {
         if (confirm("Are you sure you want to reset all data?")) {
           localStorage.clear();
-          fmu.data.options.script = {
-            "bbcodePostNumbers": 0, //BBCode post numbers
-            "excludeDeadPlayers": 1, //Whether to exclude dead players in vote tallies
-            "nightBufferTime": 10, //How long a night lasts - used for automatically filling in start times
-            "numberPostsPerPage": 60 //Maximum number of posts per page - Forum default is 60
-          };
+          fmu.data.options.init();
           fmu.data.reset();
           fmu.ui.reset();
         }
@@ -1164,6 +1310,31 @@ var fmu = {
       $("#player-list").on("click", ".remove-player", function() {
         var playerName = $(this).parents(".player-block").attr("name");
         fmu.control.players.remove(playerName);
+      });
+      $("#player-list").on("focus", ".current-group", function() {
+        $(this).siblings(".group-list").addClass("selected");
+      });
+      $("#player-list").on("blur", ".current-group", function() {
+        $(this).siblings(".group-list").removeClass("selected");
+      });
+      $("#player-list").on("mouseleave", ".group-list", function() {
+        $(this).siblings(".current-group").blur();
+      });
+
+      $("#group-listing").on("click", ".group-name", function() {
+        fmu.control.groups.remove($(this).parent().attr("name"));
+      });
+      $("#group-listing").on("click", ".group-colour", function() {
+        var colour = validateColour(prompt("Enter new colour in hex"));
+        if (colour) {
+          fmu.control.groups.update($(this).parent().attr("name"), colour);
+        }
+      })
+      $("#add-group").on("click", function() {
+        var groupName = prompt("Enter name of new group");
+        if (groupName) {
+          fmu.control.groups.add(groupName);
+        }
       });
     },
 
@@ -1384,6 +1555,30 @@ var fmu = {
       }
     },
 
+    groups: {
+      add: function(groupName) {
+        if (!fmu.data.options.game.groups.hasOwnProperty(groupName)) {
+          fmu.data.options.game.groups[groupName] = "#ff00ff";
+          fmu.data.options.save();
+          fmu.ui.groups.add(groupName);
+        }
+      },
+
+      update: function(groupName, colour) {
+        fmu.data.options.game.groups[groupName] = colour;
+        fmu.data.options.save();
+        $("#group-listing").find("[name='" + groupName + "'] .group-colour").css("background-color", colour);
+      },
+
+      remove: function(groupName) {
+        if (groupName != "unknown" && fmu.data.options.game.groups.hasOwnProperty(groupName)) {
+          delete fmu.data.options.game.groups[groupName];
+          fmu.data.options.save();
+          fmu.ui.groups.remove(groupName);
+        }
+      }
+    },
+
     votes: {
       update: function() {
         var start = 1;
@@ -1470,23 +1665,23 @@ var fmu = {
         if (fmu.data.options.script.bbcodePostNumbers === 0) {
           fmu.data.options.script.bbcodePostNumbers = 1;
           fmu.data.options.save();
-          toggleButton.text("On");
+          toggleButton.text("Include post numbers");
         } else {
           fmu.data.options.script.bbcodePostNumbers = 0;
           fmu.data.options.save();
-          toggleButton.text("Off");
+          toggleButton.text("Exclude post numbers");
         }
       },
 
       toggleExcludeDeadPlayers: function(toggleButton) {
-        if (fmu.data.options.script.excludeDeadPlayers === 0) {
-          fmu.data.options.script.excludeDeadPlayers = 1;
+        if (fmu.data.options.script.includeDeadPlayers === 0) {
+          fmu.data.options.script.includeDeadPlayers = 1;
           fmu.data.options.save();
-          toggleButton.text("On");
+          toggleButton.text("Include dead players");
         } else {
-          fmu.data.options.script.excludeDeadPlayers = 0;
+          fmu.data.options.script.includeDeadPlayers = 0;
           fmu.data.options.save();
-          toggleButton.text("Off");
+          toggleButton.text("Exclude dead players");
         }
       },
 
@@ -1559,10 +1754,6 @@ var fmu = {
       fmu.data.players.init();
       fmu.data.players.unrecognised.init();
       fmu.data.days.init();
-      if (currentPage === 1 && fmu.data.mods.list.length == 0) {
-        //Page 1, so the first poster should be a GM
-        fmu.control.mods.add($(".bigusername").first().text());
-      }
     },
 
     reset: function() {
@@ -1570,10 +1761,7 @@ var fmu = {
       fmu.data.players.reset();
       fmu.data.players.unrecognised.reset();
       currentDay = fmu.data.options.game.day;
-      if (currentPage === 1 && fmu.data.mods.list.length == 0) {
-        //Page 1, so the first poster should be a GM
-        fmu.control.mods.add($(".bigusername").first().text());
-      }
+      fmu.data.mods.reset();
     },
 
     clear: function() {
@@ -1713,6 +1901,10 @@ var fmu = {
         if (localStorage.getItem("mods" + threadId)) {
           this.list = JSON.parse(localStorage.getItem("mods" + threadId));
         }
+        if (currentPage === 1 && this.list.length == 0) {
+          //Page 1, so the first poster should be a GM
+          this.add($(".bigusername").first().text());
+        }
       },
       add: function(modName) {
         if ($.inArray(modName, this.list) === -1) {
@@ -1748,6 +1940,7 @@ var fmu = {
       add: function(playerName) {
         if (!this.list.hasOwnProperty[playerName]) {
           this.list[playerName] = {
+            "group": "unknown",
             "status": 0,
             "subs": [],
             "nicknames": []
@@ -1852,6 +2045,16 @@ var fmu = {
 
         time: function(state) {
           return Math.ceil(state / 2);
+        }
+      },
+
+      colour: function(playerName, day) {
+        if (!this.list.hasOwnProperty(playerName)) {
+          return "#880000";
+        } else if (!this.isAlive(playerName, day)) {
+          return "#aaaaaa";
+        } else {
+          return "";
         }
       },
 
@@ -2085,7 +2288,7 @@ var fmu = {
             }
           }
           var user = log[i]["user"];
-          if (fmu.data.options.script.excludeDeadPlayers && !fmu.data.players.isAlive(log[i]["user"], day)) {
+          if (!fmu.data.options.script.includeDeadPlayers && !fmu.data.players.isAlive(log[i]["user"], day)) {
             //Throwing out votes from dead players
             continue;
           }
@@ -2264,22 +2467,36 @@ var fmu = {
         var noVoteIndex = -1;
         for (var i = 0; i < l; i++) {
           if (tally[i]["target"] != "") {
+            if (!fmu.data.players.isAlive(tally[i]["target"], day)) {
+              bbcode += "[color=#cccccc]";
+            }
             bbcode += "[b]" + tally[i]["target"] + " (" + tally[i]["voters"].length;
             if (tally[i]["voters"].length % 10 == 8) {
               bbcode += "[u][/u]";
             }
-            bbcode += ")[/b] - [size=1]";
+            bbcode += ")[/b]";
+            if (!fmu.data.players.isAlive(tally[i]["target"], day)) {
+              bbcode += "[/color]";
+            }
+            bbcode += " - [size=1]";
             var voterList = "";
             for (var voter in tally[i]["voters"]) {
               if (voter > 0) {
                 bbcode += ", ";
               }
+              if (!fmu.data.players.list.hasOwnProperty(tally[i]["voters"][voter]["user"])) {
+                bbcode += "[color=#880000]";
+              } else if (!fmu.data.players.isAlive(tally[i]["voters"][voter]["user"], day)) {
+                bbcode += "[color=#cccccc]";
+              }
               bbcode += tally[i]["voters"][voter]["user"];
+              if (!fmu.data.players.list.hasOwnProperty(tally[i]["voters"][voter]["user"])) {
+                bbcode += "[/color]";
+              } else if (!fmu.data.players.isAlive(tally[i]["voters"][voter]["user"], day)) {
+                bbcode += "[/color]";
+              }
               if (fmu.data.options.script.bbcodePostNumbers) {
                 bbcode += " (#[post=\"" + tally[i]["voters"][voter]["link"] + "\"]" + tally[i]["voters"][voter]["post"] + "[/post])";
-              }
-              if (!fmu.data.players.list.hasOwnProperty(tally[i]["voters"][voter]["user"])) {
-                bbcode += "*";
               }
             }
             bbcode += "[/size]\n";
@@ -2461,9 +2678,11 @@ var fmu = {
         if (localStorage.getItem("fmuOptions")) {
           this.script = JSON.parse(localStorage.getItem("fmuOptions"));
         } else {
+          //TODO: Enumerate all possible script options and rename to more intuitive names
           this.script = {
             "bbcodePostNumbers": 0, //Whether to show BBCode post numbers
-            "excludeDeadPlayers": 1, //Whether to exclude dead players in vote tallies
+            "bbcodeColour": 1, //Whether to colour BBCode tallies
+            "includeDeadPlayers": 0, //Whether to exclude dead players in vote tallies
             "nightBufferTime": 10, //How long a night lasts - used for automatically filling in start times
             "numberPostsPerPage": 60 //Maximum number of posts per page - Forum default is 60
           };
@@ -2474,6 +2693,12 @@ var fmu = {
           this.game = {
             "mode": 0, //0 = Off, 1 = On, game config is hidden, 2 = On, game config is shown
             "day": 1, //The day that is currently selected by the user
+            "groups": {
+              "unknown": "#000000",
+              "innocent": "#0099ff",
+              "awt": "#9900ff",
+              "mafia": "#cc3333"
+            },
             "nightfallTime": 2000, //Default time for nightfall
             "popoutTally": 0, //Tally display mode
             "voteRecordMode": "tally", //Whether tally or vote log is displayed
@@ -2496,6 +2721,12 @@ var fmu = {
         this.game = {
           "mode": 0, //0 = Off, 1 = On, game config is hidden, 2 = On, game config is shown
           "day": 1, //The day that is currently selected by the user
+          "groups": {
+            "unknown": "#000000",
+            "innocent": "#0099ff",
+            "awt": "#9900ff",
+            "mafia": "#cc3333"
+          },
           "nightfallTime": 2000, //Default time for nightfall
           "popoutTally": 0, //Tally display mode
           "voteRecordMode": "tally", //Whether tally or vote log is displayed
@@ -2505,6 +2736,15 @@ var fmu = {
         this.save();
       }
     }
+  }
+}
+
+function validateColour(string) {
+  var hex = string.replace(/#/g, "");
+  if (/^[0-9A-F]{3,6}$/i.test(hex)) {
+    return "#" + hex;
+  } else {
+    return false;
   }
 }
 
