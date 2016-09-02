@@ -2062,29 +2062,25 @@ var fmu = {
             for (var c in splitName) {
               newNick += splitName[c].charAt(0);
             }
-            if ($.inArray(newNick, fmu.data.players.list[playerName].nicknames) === -1) {
-              this.add(playerName, newNick);
-            }
+            this.add(playerName, newNick);
           }
           var uppercaseName = getUpperCase(playerName);
           var nonLowercaseName = getNonLowerCase(playerName);
           var lowercaseName = getLowerCase(playerName);
           if (uppercaseName.length > 1 && lowercaseName.length > 2) {
-            if ($.inArray(nonLowercaseName, fmu.data.players.list[playerName].nicknames) === -1) {
-              this.add(playerName, nonLowercaseName);
-            }
+            this.add(playerName, nonLowercaseName);
           } else if(nonLowercaseName.length > 5 && lowercaseName.length > 1) {
-            if ($.inArray(lowercaseName, fmu.data.players.list[playerName].nicknames) === -1) {
-              this.add(playerName, lowercaseName);
-            }
+            this.add(playerName, lowercaseName);
           }
         },
+
         add: function(playerName, nickname) {
-          if (!$.inArray(nickname, fmu.data.players.list[playerName]) === -1) {
+          if ($.inArray(nickname, fmu.data.players.list[playerName].nicknames) === -1) {
             fmu.data.players.list[playerName].nicknames.push(nickname);
             fmu.data.players.save();
           }
         },
+
         remove: function(playerName, nickname) {
           var i = $.inArray(nickname, fmu.data.players.list[playerName].nicknames);
           if (i >= 0) {
@@ -2142,6 +2138,8 @@ var fmu = {
         if (!this.list.hasOwnProperty(newName)) {
           this.list[newName] = this.list[oldName];
           delete this.list[oldName];
+          this.list[newName].nicknames = [];
+          this.nicknames.init(newName);
           this.save();
           return true;
         } else {
