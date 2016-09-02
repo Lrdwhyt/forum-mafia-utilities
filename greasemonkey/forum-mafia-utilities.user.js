@@ -26,9 +26,43 @@ GM_addStyle(`
   background-color: var(--light-colour0);
   margin-top: 10px;
 }
-#fmu-main-container {
+#main-container {
   margin-bottom: 10px;
   padding-top: 10px;
+}
+
+#script-manager button, #main-container button {
+  display: inline-block;
+  font-family: Verdana, sans-serif;
+  margin: 5px;
+  padding: 9px;
+}
+.input-button {
+  background-color: #fff;
+  border: none;
+}
+.input-button:hover {
+  -moz-transition-duration: 0.4s;
+  -webkit-transition-duration: 0.4s;
+  background-color: var(--button-colour1);
+  border-color: var(--button-colour1);
+}
+.edit-button {
+  cursor: text;
+}
+.function-button {
+  -moz-transition-duration: 0.4s;
+  -webkit-transition-duration: 0.4s;
+  background-color: #607d8b;
+  border: none;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.5);
+  color: #fff;
+}
+.function-button:hover {
+  background-color: #455a64;
+}
+.function-button:active {
+  background-color: #546e7a;
 }
 
 #script-title {
@@ -101,40 +135,6 @@ GM_addStyle(`
   color: var(--main-colour0);
   display: inline-block;
   padding: 5px 10px;
-}
-
-#script-manager button, #fmu-main-container button {
-  display: inline-block;
-  font-family: Verdana, sans-serif;
-  margin: 5px;
-  padding: 9px;
-}
-.input-button {
-  background-color: #fff;
-  border: none;
-}
-.input-button:hover {
-  -moz-transition-duration: 0.4s;
-  -webkit-transition-duration: 0.4s;
-  background-color: var(--button-colour1);
-  border-color: var(--button-colour1);
-}
-.edit-button {
-  cursor: text;
-}
-.function-button {
-  -moz-transition-duration: 0.3s;
-  -webkit-transition-duration: 0.3s;
-  background-color: #607d8b;
-  border: none;
-  box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.5);
-  color: #fff;
-}
-.function-button:hover {
-  background-color: #455a64;
-}
-.function-button:active {
-  background-color: #546e7a;
 }
 
 .day-tab {
@@ -350,33 +350,6 @@ GM_addStyle(`
   display: none;
 }
 
-.alive-player .player-state {
-  color: var(--main-colour0);
-}
-.dead-player .player-state {
-  color: #999;
-}
-.death-info {
-  display: none;
-}
-.dead-player .death-info {
-  display: inline-block;
-}
-.death-info .death-phase {
-  background-color: var(--light-colour1);
-  color: #333;
-  margin-right: 0 !important;
-}
-.death-phase:hover {
-  background-color: #b0bec5;
-  color: #fff;
-}
-.death-info .death-time {
-  margin-left: 0 !important;
-}
-.dead-player .player-name {
-  text-decoration: line-through;
-}
 #player-list button {
   margin: 2px 5px;
   padding: 5px 7px;
@@ -436,14 +409,41 @@ GM_addStyle(`
 .current-group:focus {
   background-color: #f5f5f5;
 }
+.alive-player .player-state {
+  color: var(--main-colour0);
+}
+.dead-player .player-state {
+  color: #999;
+}
+.death-info {
+  display: none;
+}
+.dead-player .death-info {
+  display: inline-block;
+}
+.death-info .death-phase {
+  background-color: var(--light-colour1);
+  color: #333;
+  margin-right: 0 !important;
+}
+.death-phase:hover {
+  background-color: #b0bec5;
+  color: #fff;
+}
+.death-info .death-time {
+  margin-left: 0 !important;
+}
+.dead-player .player-name {
+  text-decoration: line-through;
+}
 .player-controls {
   display: none;
 }
-.remove-player {
-  width: 29px;
-}
 li.player-block:hover .player-controls {
   display: inline;
+}
+.remove-player {
+  width: 29px;
 }
 
 #group-listing {
@@ -576,8 +576,9 @@ var fmu = {
       }
     },
 
+    //TODO: Rename this to be more consistent with other function names
     draw: function() {
-      $("#script-manager").before("<div id='fmu-main-container'></div>");
+      $("#script-manager").before("<div id='main-container'></div>");
       $("<div />", {
         id: "page-container"
       })
@@ -587,7 +588,7 @@ var fmu = {
         })).append($("<span />", {
           id: "page-controls"
         }))
-        .appendTo("#fmu-main-container");
+        .appendTo("#main-container");
       $("<div />", {
         id: "day-controls"
       })
@@ -604,7 +605,7 @@ var fmu = {
           text: "-",
           title: "Remove a day"
         }))
-        .appendTo("#fmu-main-container");
+        .appendTo("#main-container");
       $("<div />", {
         id: "day-area"
       })
@@ -705,7 +706,7 @@ var fmu = {
           id: "end-time",
           class: "input-button edit-button"
         }))))
-        .appendTo("#fmu-main-container");
+        .appendTo("#main-container");
       $("<div />", {
         id: "toggle-game-configuration-container"
       })
@@ -714,7 +715,7 @@ var fmu = {
           id: "toggle-game-configuration",
           text: "Show game configuration"
         }))
-        .appendTo("#fmu-main-container");
+        .appendTo("#main-container");
       $("<div />", {
         id: "game-configuration"
       })
@@ -812,7 +813,7 @@ var fmu = {
           id: "add-group",
           text: "+"
         })))
-      .appendTo($("#fmu-main-container"));
+      .appendTo($("#main-container"));
       fmu.ui.pages.init();
       fmu.ui.days.init();
       fmu.ui.mods.init();
@@ -836,6 +837,34 @@ var fmu = {
       }
     },
 
+    pages: {
+      init: function() {
+        for (var page = 1; page <= pageTotal; page++) {
+          this.add(page);
+        }
+      },
+
+      add: function(page) {
+        var pageStatus = fmu.data.thread.pageStatus(page);
+        var newBlock = $("<a />", {
+          class: "page-link",
+          href: fmu.data.thread.pageLink(page),
+          page: page,
+          text: page
+        }).appendTo($("#page-controls"));
+        if (page == currentPage) {
+          newBlock.addClass("page-selected");
+        }
+        if (pageStatus == fmu.data.options.script.postsPerPage || (currentPage == pageTotal && pageStatus == numberPostsOnPage)) {
+          newBlock.addClass("full-save");
+        } else if (pageStatus > 0) {
+          newBlock.addClass("partial-save");
+        } else {
+          newBlock.addClass("empty-save");
+        }
+      }
+    },
+
     days: {
       init: function() {
         for (var day = 1; day < fmu.data.days.list.length; day++) {
@@ -843,6 +872,7 @@ var fmu = {
         }
         this.switch(currentDay);
       },
+
       add: function(day) {
         $("<div />", {
           class: "day-tab",
@@ -851,11 +881,14 @@ var fmu = {
         }).appendTo("#day-tab-container");
         this.update(day);
       },
+
       update: function(day) {
         var dayTab = $(".day-tab").eq(day - 1);
-        dayTab.removeClass("partial-data-day full-data-day empty-data-day");
+        //TODO: Colour-coded day tabs
+        //dayTab.removeClass("partial-data-day full-data-day empty-data-day");
         dayTab.addClass("full-data-day");
       },
+
       switch: function(day) {
         currentDay = day;
         fmu.data.options.game.day = day;
@@ -893,6 +926,7 @@ var fmu = {
           $("#tally-body").html("");
         }
       },
+
       remove: function(day) {
         $(".day-tab").last().remove();
       }
@@ -904,6 +938,7 @@ var fmu = {
           fmu.ui.mods.add(fmu.data.mods.list[i]);
         }
       },
+
       add: function(modName) {
         $("<button />", {
           class: "gm-name input-button",
@@ -911,34 +946,11 @@ var fmu = {
         })
         .appendTo($("#gm-names"));
       },
+
       remove: function(modName) {
         $("#gm-names").find(".gm-name").filter(function() {
           return $(this).text() == modName;
         }).remove();
-      }
-    },
-
-    pages: {
-      init: function() {
-        for (var page = 1; page <= pageTotal; page++) {
-          var pageStatus = fmu.data.thread.pageStatus(page);
-          var newBlock = $("<a />", {
-            class: "page-link",
-            href: fmu.data.thread.pageLink(page),
-            page: page,
-            text: page
-          }).appendTo($("#page-controls"));
-          if (page == currentPage) {
-            newBlock.addClass("page-selected");
-          }
-          if (pageStatus == fmu.data.options.script.postsPerPage || (currentPage == pageTotal && pageStatus == numberPostsOnPage)) {
-            newBlock.addClass("full-save");
-          } else if (pageStatus > 0) {
-            newBlock.addClass("partial-save");
-          } else {
-            newBlock.addClass("empty-save");
-          }
-        }
       }
     },
 
@@ -1104,7 +1116,7 @@ var fmu = {
         }
       },
 
-      add: function(groupName) {//TODO: Format and make pretty
+      add: function(groupName) {
         $("<div />", {
           class: "group-item",
           name: groupName
@@ -1126,7 +1138,7 @@ var fmu = {
     },
 
     reset: function() {
-      $("#fmu-main-container").remove();
+      $("#main-container").remove();
       $("#toggle-script").text("Start game");
     }
   },
@@ -1157,6 +1169,7 @@ var fmu = {
         }
       });
       $("#clear-data").on("click", function() {
+        //TODO: De-anonymise these functions
         if (confirm("Are you sure you want to reset all data?")) {
           localStorage.clear();
           fmu.data.options.init();
@@ -1366,87 +1379,6 @@ var fmu = {
       });
     },
 
-    mods: {
-      add: function(modName) {
-        fmu.data.mods.add(modName);
-        fmu.ui.mods.add(modName);
-      },
-      remove: function(modName) {
-        fmu.data.mods.remove(modName);
-        fmu.ui.mods.remove(modName);
-      }
-    },
-
-    players: {
-      add: function(playerName) {
-        if (!fmu.data.players.list.hasOwnProperty(playerName)) {
-          //If player is not already in player list, add player
-          fmu.data.players.add(playerName);
-          fmu.data.players.unrecognised.update(playerName);
-          fmu.ui.players.add(playerName);
-          fmu.ui.players.updateGroups(playerName);
-        }
-      },
-
-      import: function() {
-        $("#paste-wrapper").slideUp();
-        var importedPlayers = $("#paste-area").val().split("\n");
-        for (var i = 0; i < importedPlayers.length; i++) {
-          if (importedPlayers[i].indexOf(".") >= 0) {
-            importedPlayers[i] = importedPlayers[i].split(".")[1];
-          }
-          if (importedPlayers[i].indexOf(")") >= 0) {
-            importedPlayers[i] = importedPlayers[i].split(")")[1];
-          }
-          importedPlayers[i] = importedPlayers[i].trim();
-        }
-        importedPlayers = importedPlayers.filter(Boolean);
-        for (var i = 0; i < importedPlayers.length; i++) {
-          fmu.control.players.add(importedPlayers[i]);
-        }
-      },
-
-      updateState: function(playerName, newState) {
-        fmu.data.players.updateState(playerName, newState);
-        fmu.ui.players.updateState(playerName);
-      },
-
-      switchGroup: function(playerName, groupName) {
-        fmu.data.players.list[playerName].group = groupName;
-        fmu.data.players.save();
-        fmu.ui.players.list[playerName].find(".current-group").css("background-color", fmu.data.options.game.groups[fmu.data.players.list[playerName].group]);
-      },
-
-      subs: {
-        add: function(playerName, subName) {
-          fmu.data.players.subs.add(playerName, subName);
-          fmu.ui.players.subs.add(playerName, subName);
-        },
-        remove: function(playerName, subName) {
-          fmu.data.players.subs.remove(playerName, subName);
-          fmu.ui.players.subs.remove(playerName, subName);
-        }
-      },
-
-      rename: function(oldName, newName) {
-        if (fmu.data.players.rename(oldName, newName)) {
-          fmu.ui.players.rename(oldName, newName);
-        }
-      },
-
-      remove: function(playerName) {
-        if (fmu.data.players.list.hasOwnProperty(playerName)) {
-          fmu.data.players.remove(playerName);
-          fmu.ui.players.remove(playerName);
-        }
-      },
-
-      reset: function() {
-        fmu.data.players.reset();
-        fmu.ui.players.reset();
-      }
-    },
-
     days: {
       add: function() {
         fmu.data.days.add();
@@ -1590,6 +1522,87 @@ var fmu = {
       }
     },
 
+    mods: {
+      add: function(modName) {
+        fmu.data.mods.add(modName);
+        fmu.ui.mods.add(modName);
+      },
+      remove: function(modName) {
+        fmu.data.mods.remove(modName);
+        fmu.ui.mods.remove(modName);
+      }
+    },
+
+    players: {
+      add: function(playerName) {
+        if (!fmu.data.players.list.hasOwnProperty(playerName)) {
+          //If player is not already in player list, add player
+          fmu.data.players.add(playerName);
+          fmu.data.players.unrecognised.update(playerName);
+          fmu.ui.players.add(playerName);
+          fmu.ui.players.updateGroups(playerName);
+        }
+      },
+
+      import: function() {
+        $("#paste-wrapper").slideUp();
+        var importedPlayers = $("#paste-area").val().split("\n");
+        for (var i = 0; i < importedPlayers.length; i++) {
+          if (importedPlayers[i].indexOf(".") >= 0) {
+            importedPlayers[i] = importedPlayers[i].split(".")[1];
+          }
+          if (importedPlayers[i].indexOf(")") >= 0) {
+            importedPlayers[i] = importedPlayers[i].split(")")[1];
+          }
+          importedPlayers[i] = importedPlayers[i].trim();
+        }
+        importedPlayers = importedPlayers.filter(Boolean);
+        for (var i = 0; i < importedPlayers.length; i++) {
+          fmu.control.players.add(importedPlayers[i]);
+        }
+      },
+
+      updateState: function(playerName, newState) {
+        fmu.data.players.updateState(playerName, newState);
+        fmu.ui.players.updateState(playerName);
+      },
+
+      switchGroup: function(playerName, groupName) {
+        fmu.data.players.list[playerName].group = groupName;
+        fmu.data.players.save();
+        fmu.ui.players.list[playerName].find(".current-group").css("background-color", fmu.data.options.game.groups[fmu.data.players.list[playerName].group]);
+      },
+
+      subs: {
+        add: function(playerName, subName) {
+          fmu.data.players.subs.add(playerName, subName);
+          fmu.ui.players.subs.add(playerName, subName);
+        },
+        remove: function(playerName, subName) {
+          fmu.data.players.subs.remove(playerName, subName);
+          fmu.ui.players.subs.remove(playerName, subName);
+        }
+      },
+
+      rename: function(oldName, newName) {
+        if (fmu.data.players.rename(oldName, newName)) {
+          fmu.ui.players.rename(oldName, newName);
+        }
+      },
+
+      remove: function(playerName) {
+        if (fmu.data.players.list.hasOwnProperty(playerName)) {
+          fmu.data.players.remove(playerName);
+          fmu.ui.players.remove(playerName);
+        }
+      },
+
+      reset: function() {
+        fmu.data.players.reset();
+        fmu.ui.players.reset();
+      }
+    },
+
     groups: {
       add: function(groupName) {
         if (!fmu.data.options.game.groups.hasOwnProperty(groupName)) {
@@ -1656,14 +1669,14 @@ var fmu = {
       copy: function(type) {
         if (type === "bbcode") {
           if (!jQuery.isEmptyObject(fmu.data.days.list[currentDay].tally)) {
-            $("#fmu-main-container").append("<textarea id='data-container'></textarea>");
+            $("#main-container").append("<textarea id='data-container'></textarea>");
             $("#data-container").val(fmu.data.votes.bbcodeTally(fmu.data.days.list[currentDay].tally, currentDay));
             $("#data-container").select();
             document.execCommand("copy");
             $("#data-container").remove();
           }
         } else if (type === "voteLog") {
-          $("#fmu-main-container").append("<textarea id='data-container'></textarea>");
+          $("#main-container").append("<textarea id='data-container'></textarea>");
           var start = 1;
           var end = 200000;
           if (fmu.data.days.list[currentDay]["start"] === "start-post") {
@@ -1968,6 +1981,64 @@ var fmu = {
       }
     },
 
+    days: {
+      init: function() {
+        if (localStorage.getItem("days" + threadId)) {
+          this.list = JSON.parse(localStorage.getItem("days" + threadId));
+        } else {
+          this.add(1);
+        }
+      },
+
+      add: function() {
+        var startPost = 1;
+        var startDate = fmu.data.date.lastNightfall() + "";
+        var endDate = fmu.data.date.offset(fmu.data.date.lastNightfall(), 1, 0);
+        var day = this.list.length;
+        if (day === 0) {
+          day = 1;
+        }
+        if (day > 1) {
+          if (this.list[day - 1].hasOwnProperty("endPost")) {
+            startPost = this.list[day - 1]["endPost"] + 1;
+          }
+          var oldEndDate = new Date(this.list[day - 1]["endDate"]);
+          startDate = new Date(oldEndDate.getTime() + fmu.data.options.script.nightBuffer * 60 * 1000);
+          endDate = new Date(oldEndDate.getTime() + 24 * 60 * 60 * 1000);
+        }
+        this.list[day] = {
+          "start": "start-date",
+          "end": "end-date",
+          "startDate": startDate,
+          "startPost": startPost,
+          "endDate": endDate,
+          "tally": {},
+          "voteLog": ""
+        };
+        this.save();
+      },
+
+      list: [],
+
+      remove: function() {
+        if (this.list.length > 2) {
+          this.list.pop();
+          this.save();
+          return true;
+        } else {
+          return false;
+        }
+      },
+
+      save: function() {
+        localStorage.setItem("days" + threadId, JSON.stringify(this.list));
+      },
+
+      reset: function() {
+        this.list = [];
+      }
+    },
+
     mods: {
       init: function() {
         if (localStorage.getItem("mods" + threadId)) {
@@ -2252,64 +2323,6 @@ var fmu = {
 
       reset: function() {
         this.list = {};
-      }
-    },
-
-    days: {
-      init: function() {
-        if (localStorage.getItem("days" + threadId)) {
-          this.list = JSON.parse(localStorage.getItem("days" + threadId));
-        } else {
-          this.add(1);
-        }
-      },
-
-      add: function() {
-        var startPost = 1;
-        var startDate = fmu.data.date.lastNightfall() + "";
-        var endDate = fmu.data.date.offset(fmu.data.date.lastNightfall(), 1, 0);
-        var day = this.list.length;
-        if (day === 0) {
-          day = 1;
-        }
-        if (day > 1) {
-          if (this.list[day - 1].hasOwnProperty("endPost")) {
-            startPost = this.list[day - 1]["endPost"] + 1;
-          }
-          var oldEndDate = new Date(this.list[day - 1]["endDate"]);
-          startDate = new Date(oldEndDate.getTime() + fmu.data.options.script.nightBuffer * 60 * 1000);
-          endDate = new Date(oldEndDate.getTime() + 24 * 60 * 60 * 1000);
-        }
-        this.list[day] = {
-          "start": "start-date",
-          "end": "end-date",
-          "startDate": startDate,
-          "startPost": startPost,
-          "endDate": endDate,
-          "tally": {},
-          "voteLog": ""
-        };
-        this.save();
-      },
-
-      list: [],
-
-      remove: function() {
-        if (this.list.length > 2) {
-          this.list.pop();
-          this.save();
-          return true;
-        } else {
-          return false;
-        }
-      },
-
-      save: function() {
-        localStorage.setItem("days" + threadId, JSON.stringify(this.list));
-      },
-
-      reset: function() {
-        this.list = [];
       }
     },
 
