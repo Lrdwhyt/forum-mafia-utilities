@@ -2273,14 +2273,14 @@ var fmu = {
         },
 
         register: function(userName) {
-          if (!jQuery.isEmptyObject(fmu.data.players.list) && $.inArray(userName, this.list) == -1) {
+          if (!jQuery.isEmptyObject(fmu.data.players.list) && $.inArray(userName, this.list) === -1) {
             if (Object.keys(fmu.data.players.list).every(function(playerName) {
               if (diceCoefficient(playerName, userName) > 0.9) {
                 fmu.control.players.rename(playerName, userName);
                 return false;
               }
               return true;
-            }) == true) {
+            }) === true) {
               this.add(userName);
             }
           }
@@ -2483,8 +2483,7 @@ var fmu = {
           } else if (type === 1) {
             html += " unvotes and votes " + log[i].target;
           } else if (type === -1) {
-            //TODO: See if != null can be replaced
-            html += " unvotes" + (log[i].target != null ? " " + log[i].target : "");
+            html += " unvotes" + (log[i].target ? " " + log[i].target : "");
           }
           html += "<br />";
         }
@@ -2885,6 +2884,7 @@ var fmu = {
   }
 };
 
+//TODO: Relocate these misc functions into fmu object
 function validateColour(string) {
   var hex = string.replace(/#/g, "");
   if (/^[0-9A-F]{3,6}$/i.test(hex)) {
