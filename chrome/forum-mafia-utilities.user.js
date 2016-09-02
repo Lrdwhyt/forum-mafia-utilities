@@ -2366,7 +2366,7 @@ var fmu = {
 
     thread: {
       id: function() {
-        return parseInt($("a.smallfont").first().attr("href").split("&")[0].split("=")[1]);
+        return parseInt($("#tag_edit_link").attr("href").split("&")[0].split("=")[1]);
       }
     },
 

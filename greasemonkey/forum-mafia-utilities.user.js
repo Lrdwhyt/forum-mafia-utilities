@@ -3,7 +3,7 @@
 // @namespace   lrdwhyt
 // @description Number of added functionalities to make playing forum mafia easier. Designed for Forums of Loathing.
 // @include     http://forums.kingdomofloathing.com/vb/showthread.php?*
-// @version     0.5.0
+// @version     0.5.1
 // @grant       GM_addStyle
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js
 // ==/UserScript==
@@ -2833,7 +2833,7 @@ var fmu = {
 
     thread: {
       id: function() {
-        return parseInt($("a.smallfont").first().attr("href").split("&")[0].split("=")[1]);
+        return parseInt($("#tag_edit_link").attr("href").split("&")[0].split("=")[1]);
       }
     },
 
