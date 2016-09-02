@@ -1808,10 +1808,8 @@ var fmu = {
       ignoredPlayerList = ["TallyBot"];
       /* List of words used to detect night posts (unimplemented) */
       nightKeywords = ["lynch", "kill", "day", "night", "someone", "die"];
-      var pageString = $(".pagenav td.vbmenu_control:first-child").first().text();
-      var pageArray = pageString.split(" ");
-      currentPage = parseInt(pageArray[1]);
-      pageTotal = parseInt(pageArray[3]);
+      currentPage = fmu.parser.page.current();
+      pageTotal = fmu.parser.page.total();
       numberPostsOnPage = fmu.parser.page.numberPosts();
     },
 
@@ -2828,6 +2826,24 @@ var fmu = {
     page: {
       numberPosts: function() {
         return (1 + parseInt($(".thead > [id^=postcount]").last().attr("name")) - parseInt($(".thead > [id^=postcount]").first().attr("name")));
+      },
+
+      current: function() {
+        var pageString = $(".pagenav td.vbmenu_control:first-child").first().text();
+        if (pageString) {
+          return parseInt(pageString.split(" ")[1]);
+        } else {
+          return 1;
+        }
+      },
+
+      total: function() {
+        var pageString = $(".pagenav td.vbmenu_control:first-child").first().text();
+        if (pageString) {
+          return parseInt(pageString.split(" ")[3]);
+        } else {
+          return 1;
+        }
       }
     },
 
