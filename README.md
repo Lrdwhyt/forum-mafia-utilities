@@ -9,7 +9,7 @@ It is written in JavaScript and mainly uses the jQuery library.
 ### Firefox
 
 Forum Mafia Utilities for Firefox requires the Greasemonkey add-on, which can be downloaded [here](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/).
-With Greasemonkey,  install Forum Mafia Utilities via the Releases page or by [clicking here](https://github.com/Lrdwhyt/forum-mafia-utilities/releases/download/v0.4.0/forum-mafia-utilities.user.js).
+With Greasemonkey,  install Forum Mafia Utilities via the Releases page or by [clicking here](https://github.com/Lrdwhyt/forum-mafia-utilities/releases/download/v0.5.1/forum-mafia-utilities.user.js).
 
 ### Chrome
 
@@ -17,7 +17,7 @@ Forum Mafia Utilities is available as a Chrome extension, which can be downloade
 
 ## Features
 - Generates voting tallies for lynches
-- Displays information about the game in one place for easy access
+- Group players together and colour them
 - Saves all data locally for use across sessions
 - Can be turned on or off for each individual thread
 
