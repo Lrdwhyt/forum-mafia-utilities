@@ -1293,7 +1293,6 @@ var fmu = {
       $("#confirm-paste").on("click", fmu.control.players.import);
       $("#reset-players").on("click", function() {
         fmu.control.players.reset();
-        fmu.control.players.save();
       });
 
       $("#player-list").on("mousedown", ".group-choice", function() {
@@ -1601,6 +1600,7 @@ var fmu = {
 
       reset: function() {
         fmu.data.players.reset();
+        fmu.data.players.save();
         fmu.ui.players.reset();
       }
     },

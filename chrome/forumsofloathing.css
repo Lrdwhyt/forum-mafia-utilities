@@ -15,9 +15,43 @@
   background-color: var(--light-colour0);
   margin-top: 10px;
 }
-#fmu-main-container {
+#main-container {
   margin-bottom: 10px;
   padding-top: 10px;
+}
+
+#script-manager button, #main-container button {
+  display: inline-block;
+  font-family: Verdana, sans-serif;
+  margin: 5px;
+  padding: 9px;
+}
+.input-button {
+  background-color: #fff;
+  border: none;
+}
+.input-button:hover {
+  -moz-transition-duration: 0.4s;
+  -webkit-transition-duration: 0.4s;
+  background-color: var(--button-colour1);
+  border-color: var(--button-colour1);
+}
+.edit-button {
+  cursor: text;
+}
+.function-button {
+  -moz-transition-duration: 0.4s;
+  -webkit-transition-duration: 0.4s;
+  background-color: #607d8b;
+  border: none;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.5);
+  color: #fff;
+}
+.function-button:hover {
+  background-color: #455a64;
+}
+.function-button:active {
+  background-color: #546e7a;
 }
 
 #script-title {
@@ -90,40 +124,6 @@
   color: var(--main-colour0);
   display: inline-block;
   padding: 5px 10px;
-}
-
-#script-manager button, #fmu-main-container button {
-  display: inline-block;
-  font-family: Verdana, sans-serif;
-  margin: 5px;
-  padding: 9px;
-}
-.input-button {
-  background-color: #fff;
-  border: none;
-}
-.input-button:hover {
-  -moz-transition-duration: 0.4s;
-  -webkit-transition-duration: 0.4s;
-  background-color: var(--button-colour1);
-  border-color: var(--button-colour1);
-}
-.edit-button {
-  cursor: text;
-}
-.function-button {
-  -moz-transition-duration: 0.3s;
-  -webkit-transition-duration: 0.3s;
-  background-color: #607d8b;
-  border: none;
-  box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.5);
-  color: #fff;
-}
-.function-button:hover {
-  background-color: #455a64;
-}
-.function-button:active {
-  background-color: #546e7a;
 }
 
 .day-tab {
@@ -339,33 +339,6 @@
   display: none;
 }
 
-.alive-player .player-state {
-  color: var(--main-colour0);
-}
-.dead-player .player-state {
-  color: #999;
-}
-.death-info {
-  display: none;
-}
-.dead-player .death-info {
-  display: inline-block;
-}
-.death-info .death-phase {
-  background-color: var(--light-colour1);
-  color: #333;
-  margin-right: 0 !important;
-}
-.death-phase:hover {
-  background-color: #b0bec5;
-  color: #fff;
-}
-.death-info .death-time {
-  margin-left: 0 !important;
-}
-.dead-player .player-name {
-  text-decoration: line-through;
-}
 #player-list button {
   margin: 2px 5px;
   padding: 5px 7px;
@@ -425,14 +398,41 @@
 .current-group:focus {
   background-color: #f5f5f5;
 }
+.alive-player .player-state {
+  color: var(--main-colour0);
+}
+.dead-player .player-state {
+  color: #999;
+}
+.death-info {
+  display: none;
+}
+.dead-player .death-info {
+  display: inline-block;
+}
+.death-info .death-phase {
+  background-color: var(--light-colour1);
+  color: #333;
+  margin-right: 0 !important;
+}
+.death-phase:hover {
+  background-color: #b0bec5;
+  color: #fff;
+}
+.death-info .death-time {
+  margin-left: 0 !important;
+}
+.dead-player .player-name {
+  text-decoration: line-through;
+}
 .player-controls {
   display: none;
 }
-.remove-player {
-  width: 29px;
-}
 li.player-block:hover .player-controls {
   display: inline;
+}
+.remove-player {
+  width: 29px;
 }
 
 #group-listing {
