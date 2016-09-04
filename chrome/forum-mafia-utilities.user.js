@@ -1873,7 +1873,7 @@ var fmu = {
           var target = fmu.data.votes.target(raw);
           if (type !== 0 && (type == -1 || target)) {
             log.push({
-              "post": post,
+              "post": parseInt(post),
               "user": data[post].u,
               "type": type,
               "target": target,
