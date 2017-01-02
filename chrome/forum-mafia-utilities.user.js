@@ -454,7 +454,21 @@ var fmu = {
         if (fmu.data.options.game.voteRecordType == "tally" && !jQuery.isEmptyObject(fmu.data.days.list[day].tally)) {
           $("#tally-body").html(fmu.data.votes.htmlTally(fmu.data.days.list[day].tally, day));
         } else if (fmu.data.options.game.voteRecordType == "votelog" && fmu.data.days.list[day].voteLog.length > 0) {
-          $("#tally-body").html(fmu.data.votes.htmlLog(fmu.data.days.list[day].voteLog));
+          var start = 1;
+          var end = 200000;
+          if (fmu.data.days.list[day].start === "start-post") {
+            start = parseInt(fmu.data.days.list[day].startPost);
+          } else if (fmu.data.days.list[day].start === "start-date") {
+            start = new Date(fmu.data.days.list[day].startDate);
+            start.setUTCSeconds(0, 0);
+          }
+          if (fmu.data.days.list[day].end === "end-post") {
+            end = parseInt(fmu.data.days.list[day].endPost);
+          } else if (fmu.data.days.list[day].end === "end-date") {
+            end = new Date(fmu.data.days.list[day].endDate);
+            end.setUTCSeconds(59, 999);
+          }
+          $("#tally-body").html(fmu.data.votes.htmlLog(fmu.data.days.list[day].voteLog, start, end));
         } else {
           $("#tally-body").html("");
         }
@@ -1227,7 +1241,7 @@ var fmu = {
             end.setUTCSeconds(59, 999);
           }
           var voteRecord = fmu.data.votes.log();
-          var voteLog = fmu.data.votes.htmlLog(voteRecord, start, end);
+          var voteLog = fmu.data.votes.bbcodeLog(voteRecord, start, end);
           $("#data-container").val(voteLog);
           $("#data-container").select();
           document.execCommand("copy");
@@ -1488,7 +1502,7 @@ var fmu = {
               }
               var content = htmlContent.replace(/(['"])/g, '\\$1').replace(/\n/g, " ").toLowerCase();
               if (content.indexOf(fmu.data.options.game.voteKeyword) >= 0 || content.indexOf(fmu.data.options.game.unvoteKeyword) >= 0) {
-                boldedContent += content.trim();
+                boldedContent += content.trim().replace(/\<br\>/gi, "");
               }
             });
             if (boldedContent.length === 0) {
@@ -2018,6 +2032,7 @@ var fmu = {
           } else if (type === -1) {
             html += " unvotes" + (log[i].target ? " " + log[i].target : "");
           }
+          html += " (\"" + log[i].raw + "\")";
           html += "<br />";
         }
         return html;
@@ -2062,6 +2077,45 @@ var fmu = {
         } else {
           return target;
         }
+      },
+
+      bbcodeLog: function(log, start, end, day) {
+        var bbcode = "";
+        var l = log.length;
+        for (var i = 0; i < l; i++) {
+          //Filtering for range
+          var post = log[i].post;
+          if (start instanceof Date) {
+            if (start.getTime() > new Date(log[i].time).getTime()) {
+              continue;
+            }
+          } else {
+            if (start > post) {
+              continue;
+            }
+          }
+          if (end instanceof Date) {
+            if (end.getTime() < new Date(log[i].time).getTime()) {
+              break;
+            }
+          } else {
+            if (end < post) {
+              break;
+            }
+          }
+          var type = log[i].type;
+          bbcode += "[[url='" + fmu.data.thread.postLink(log[i].link) + "']#" + log[i].post + "[/url]] ";
+          bbcode += log[i].user;
+          if (type === 2) {
+            bbcode += " votes " + log[i].target;
+          } else if (type === 1) {
+            bbcode += " unvotes and votes " + log[i].target;
+          } else if (type === -1) {
+            bbcode += " unvotes" + (log[i].target ? " " + log[i].target : "");
+          }
+          bbcode += "\n";
+        }
+        return bbcode;
       },
 
       bbcodeTally: function(tally, day) {
