@@ -9,7 +9,7 @@ It is written in JavaScript and mainly uses the jQuery library.
 ### Firefox
 
 Forum Mafia Utilities for Firefox requires the Violetmonkey add-on, which can be downloaded [here](https://addons.mozilla.org/en/firefox/addon/violentmonkey/).
-With Violentmonkey,  install Forum Mafia Utilities via the Releases page or by [clicking here](https://github.com/Lrdwhyt/forum-mafia-utilities/releases/download/v0.5.1/forum-mafia-utilities.user.js).
+With Violentmonkey,  install Forum Mafia Utilities via the Releases page or by [clicking here](https://github.com/Lrdwhyt/forum-mafia-utilities/releases/download/v0.5.2/forum-mafia-utilities.user.js).
 
 ### Chrome
 
